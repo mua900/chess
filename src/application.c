@@ -1,6 +1,6 @@
 #include "application.h"
 
-bool create_application(Application* app, const Config* config)
+bool create_application(Application* app, const char* base_path)
 {
   if (!SDL_Init(SDL_INIT_VIDEO))
   {
@@ -15,7 +15,8 @@ bool create_application(Application* app, const Config* config)
     return false;
   }
 
-  load_piece_set(&app->assets, config->piece_set);
+  app->config = read_configuration(make_string(base_path));
+  load_piece_set(&app->assets, app->config.piece_set);
 
   app->quit = false;
   return true;
@@ -30,7 +31,18 @@ void application_handle_events(Application* app)
   	{
       case SDL_EVENT_QUIT:
         app->quit = true;
-	     break;
+	      break;
+      case SDL_EVENT_KEY_DOWN:
+      {
+        SDL_KeyboardEvent keyboard = e.key;
+        switch (keyboard.scancode)
+        {
+          case SDL_SCANCODE_ESCAPE:
+            app->quit = true;
+            break;
+        }
+        break;
+      }
       default:
         break;
   	}
@@ -123,6 +135,7 @@ bool parse_config(String configuration, Config* conf)
       if (string_compare(key,MAKE_STRING("piece_set")))
       {
         conf->piece_set = value;
+        
       }
     }
   }
@@ -134,40 +147,70 @@ const Config DefaultConfiguration = (Config){
   .piece_set = MAKE_STRING("alpha")
 };
 
-Config read_configuration(String root_directory)
+SDL_EnumerationResult find_and_load_config(void* user_data, const char* dir_name, const char* fname)
 {
-  String_Builder sb = make_string_builder(256);
-  Config config = DefaultConfiguration;
+  Config* config = (Config*)user_data;
 
   const String config_file_names[] = {
-    MAKE_STRING("config"),
+    MAKE_STRING("caro.conf"),
     MAKE_STRING("config.txt"),
+    MAKE_STRING("config"),
   };
-  
+
+  String file_name = make_string(fname);
+
   for (int i = 0; i < ARRAY_SIZE(config_file_names); i++)
   {
-    String file_name = config_file_names[i];
-    sb_clear(&sb);
-    sb_append(&sb,file_name);
-
-    if (file_exists(file_name))
+    String conf_file_name = config_file_names[i];
+    if (string_compare(file_name, conf_file_name))
     {
       bool load_success;
-      File file = load_file(sb_c_string(&sb), &load_success);
+      File file = load_file(fname, &load_success);
 
+      LOG_MSGF("Configuration file %s loaded", fname);
       if (load_success)
       {
-        bool parse_success = parse_config(file, &config);
+        bool parse_success = parse_config(file, config);
 
         unload_file(file);
         break;
       }
+
+      return SDL_ENUM_SUCCESS;
     }
   }
 
-  sb_free(&sb);
+  return SDL_ENUM_CONTINUE;
+}
+
+
+Config read_configuration(String base_path)
+{
+  Config config = DefaultConfiguration;
+
+  SDL_EnumerateDirectory(SDL_GetBasePath(), find_and_load_config, &config);
 
   return config;
+}
+
+SDL_EnumerationResult load_piece(void* userdata, const char* dirname, const char* fname)
+{
+  Assets* assets = (Assets*)userdata;
+
+  const char* piece_names[] = {
+    "wK.png","wQ.png","wR.png","wB.png","wN.png","wP.png",
+    "bK.png","bQ.png","bR.png","bB.png","bN.png","bP.png"
+  };
+
+  for (int i = 0; i < ARRAY_SIZE(piece_names); i++)
+  {
+    if (strcmp(piece_names[i],fname))
+    {
+      
+    }
+  }
+
+  return SDL_ENUM_CONTINUE;
 }
 
 bool load_piece_set(Assets* assets, String piece_set)
@@ -175,6 +218,9 @@ bool load_piece_set(Assets* assets, String piece_set)
   String_Builder sb = make_string_builder(256);
   sb_append(&sb, MAKE_STRING("../asset/"));
   sb_append(&sb, piece_set);
+  sb_append_char(&sb, '/');
+
+  SDL_EnumerateDirectory(sb_c_string(&sb), load_piece, assets);
 
   sb_free(&sb);
   return true;

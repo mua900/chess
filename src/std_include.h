@@ -8,5 +8,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #endif // _STD_INCLUDE

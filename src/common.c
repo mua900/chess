@@ -19,22 +19,27 @@ int hamming(uint64_t n)
   return __builtin_popcount(n);
 }
 
-void log_log(enum Log_Level ll, char const * const msg)
+void log_log(enum Log_Level ll, char const * const msg, ...)
 {
+  char buff[1024];
+  va_list vargs;
+  va_start(vargs,msg);
+  vsnprintf(buff,sizeof(buff),msg,vargs);
+  va_end(vargs);
   switch (ll)
   {
   case Log_Level_Message:
-    fprintf(stderr, "[ERROR]: %s\n", msg); break;
+    fprintf(stderr, "[MSG]: %s\n", buff); break;
   case Log_Level_Warning:
-    fprintf(stderr, "[WARNING]: %s\n", msg); break;
+    fprintf(stderr, "[WARNING]: %s\n", buff); break;
   case Log_Level_Error:
-    fprintf(stderr, "[MESSAGE]: %s\n", msg); break;
+    fprintf(stderr, "[ERROR]: %s\n", buff); break;
   default:
-    fprintf(stderr, "%s\n", msg); break;
+    fprintf(stderr, "%s\n", buff); break;
   }
 }
 
-String make_string(char* s)
+String make_string(const char* s)
 {
     int len = strlen(s);
     return (String){.data=s,.size=len};

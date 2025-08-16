@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL.h>
 #include "common.h"
+#include "chess.h"
 
 typedef struct {
     String piece_set;
@@ -17,12 +18,7 @@ typedef struct {
 } Window;
 
 typedef struct {
-    String root_directory;
-    String asset_directory;
-} PathContext;
-
-typedef struct {
-    SDL_Texture* piece_set;
+    SDL_Texture* piece_textures[CHESS_PIECE_TYPE_COUNT*2];
 } Assets;
 
 bool load_piece_set(Assets* assets, String piece_set);
@@ -32,12 +28,11 @@ typedef struct Application {
 
     Config config;
     Assets assets;
-    PathContext paths;
 
     bool quit;
 } Application;
 
-bool create_application(Application* app, const Config* config);
+bool create_application(Application* app, const char* base_path);
 void application_handle_events(Application* app);
 void application_draw(Application* app);
 

@@ -14,7 +14,7 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 
 typedef struct {
-  char* data;
+  const unsigned char* data;
   int size;
 } String;
 
@@ -22,7 +22,7 @@ typedef struct {
 #define CSTRING_LENGTH(s) (sizeof(s)-1)
 #define MAKE_STRING(s) (String){.data=s,.size=CSTRING_LENGTH(s)}
 
-String make_string(char* s);
+String make_string(const char* s);
 bool string_compare(String s1, String s2);
 String string_slice(String s, int start, int end);
 String string_trim(String s);
@@ -50,11 +50,14 @@ enum Log_Level {
   Log_Level_Error,
 };
 
-void log_log(enum Log_Level ll, char const * const msg);
+void log_log(enum Log_Level ll, char const * const msg, ...);
 
 #define LOG_ERROR(msg)    log_log(Log_Level_Error, msg)
 #define LOG_WARNING(msg)  log_log(Log_Level_Warning, msg)
 #define LOG_MSG(msg)      log_log(Log_Level_Message, msg)
+#define LOG_ERRORF(msg, ...)    log_log(Log_Level_Error, msg, __VA_ARGS__)
+#define LOG_WARNINGF(msg, ...)  log_log(Log_Level_Warning, msg, __VA_ARGS__)
+#define LOG_MSGF(msg, ...)      log_log(Log_Level_Message, msg, __VA_ARGS__)
 
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 

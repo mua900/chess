@@ -7,8 +7,9 @@
 int main(int argc, char** argv)
 {
     Application application;
-    Config config = read_configuration(make_string(argv[0]));
-    if (!create_application(&application,&config))
+    const char* base_path = SDL_GetBasePath();
+    
+    if (!create_application(&application, base_path))
     {
         return 1;
     }
