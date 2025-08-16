@@ -16,13 +16,10 @@ typedef struct {
     SDL_Renderer* renderer;
 } Window;
 
-/*
-@todo
 typedef struct {
     String root_directory;
     String asset_directory;
-    } PathContext;
-*/
+} PathContext;
 
 typedef struct {
     SDL_Texture* piece_set;
@@ -35,6 +32,7 @@ typedef struct Application {
 
     Config config;
     Assets assets;
+    PathContext paths;
 
     bool quit;
 } Application;
