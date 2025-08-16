@@ -34,6 +34,11 @@ typedef enum {
   CHESS_PIECE_TYPE_COUNT
 } Chess_Piece_Type;
 
+typedef enum {
+    CHESS_WHITE,
+    CHESS_BLACK,
+} Chess_Color;
+
 typedef struct {
   Bitboard white;
   Bitboard black;
@@ -76,5 +81,7 @@ void eliminate_moves(Chess_Position* position);
 void generate_moves(Chess_Position* position);
 
 Board_Location get_board_location(Bitboard x);
+
+void print_board(Chess_Board* board);
 
 #endif

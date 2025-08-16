@@ -1,6 +1,6 @@
 #include "chess.h"
 
-#define BITBOARD(x) ((Bitboard)1 << x)
+#define BITBOARD(x) ((Bitboard)1 << (x))
 
 ivec2 get_board_coord(u8 index)
 {
@@ -67,10 +67,10 @@ void generate_orthogonal_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard
         Bitboard moves = 0;
   
   
-        SCAN_DIRECTION(location.file+1, +1, it<8,  location.rank*8+it, moves, friendly, opponent)
-        SCAN_DIRECTION(location.file-1, -1, it>=0, location.rank*8+it, moves, friendly, opponent)
-        SCAN_DIRECTION(location.rank+1, +1, it<8,  it*8+location.file, moves, friendly, opponent)
-        SCAN_DIRECTION(location.rank-1, -1, it>=0, it*8+location.file, moves, friendly, opponent)
+        SCAN_DIRECTION(location.file+1, +1, it<8,  (location.rank*8+it), moves, friendly, opponent)
+        SCAN_DIRECTION(location.file-1, -1, it>=0, (location.rank*8+it), moves, friendly, opponent)
+        SCAN_DIRECTION(location.rank+1, +1, it<8,  (it*8+location.file), moves, friendly, opponent)
+        SCAN_DIRECTION(location.rank-1, -1, it>=0, (it*8+location.file), moves, friendly, opponent)
         
         pos_moves->moves[location.index] |= moves;
     }
@@ -162,6 +162,7 @@ void generate_pawn_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard frien
 
 void generate_knight_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard friendly, Bitboard opponent)
 {
+  (void)opponent;
   const ivec2 offsets[] = {
     {-1,-2},{1,-2},{-2,-1},{2,-1},{-2,1},{2,1},{-1,2},{1,2}
   };
@@ -173,7 +174,7 @@ void generate_knight_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard fri
     pieces &= pieces-1;
 
     Board_Location board_location = get_board_location(p);
-    for (int i = 0; i < ARRAY_SIZE(offsets); i++)
+    for (size_t i = 0; i < ARRAY_SIZE(offsets); i++)
     {
       Bitboard square = BITBOARD(board_location.index + offsets[i].x+offsets[i].y*8);
 
@@ -196,6 +197,7 @@ void generate_knight_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard fri
 
 void generate_king_moves(Chess_Moves* pos_moves, Bitboard king, Bitboard friendly, Bitboard opponent)
 {
+  (void)opponent;
   if (hamming(king) != 1)
   {
     LOG_ERROR("Multiple kings of the same side on the board");
@@ -205,7 +207,7 @@ void generate_king_moves(Chess_Moves* pos_moves, Bitboard king, Bitboard friendl
 
   Bitboard moves = 0;
   const ivec2 offsets[] = {{-1,-1},{0,-1},{1,-1},{-1,0},{1,0},{-1,1},{0,1},{1,1}};
-  for (int i = 0; i < ARRAY_SIZE(offsets); i++)
+  for (size_t i = 0; i < ARRAY_SIZE(offsets); i++)
   {
     Bitboard square = BITBOARD(board_location.index + offsets[i].x+offsets[i].y*8);
 
@@ -242,4 +244,37 @@ void generate_moves(Chess_Position* position)
   generate_pawn_moves(&position->moves, (position->board.pieces[CHESS_PIECE_TYPE_PAWN]) & position->board.black, position->board.black, position->board.white,true);
   generate_knight_moves(&position->moves, (position->board.pieces[CHESS_PIECE_TYPE_KNIGHT]) & position->board.black, position->board.black, position->board.white);
   generate_king_moves(&position->moves, (position->board.pieces[CHESS_PIECE_TYPE_KING]) & position->board.black, position->board.black, position->board.white);
+}
+
+void print_board(Chess_Board* board)
+{
+    char buffer[73];
+    const char piece_chars[] = {
+        'K','Q','R','B','N','P',
+        'k','q','r','b','n','p',
+    };
+
+    for (int rank = 0; rank < 8; rank++)
+    {
+        for (int col = 0; col < 8; col++)
+        {
+            int index = rank*8+col;
+            Bitboard p = BITBOARD(index);
+
+            for (int i = 0; i < CHESS_PIECE_TYPE_COUNT; i++)
+            {
+                if (p & board->pieces[i])
+                {
+                    int color = (p & board->white) ? (0) : (1);
+                    buffer[rank*9+col] = piece_chars[color*CHESS_PIECE_TYPE_COUNT+i];
+                    break;
+                }
+            }
+        }
+
+        buffer[(rank+1)*8] = '\n';
+    }
+
+    buffer[sizeof(buffer)-1] = '\0';
+    printf("%s",buffer);
 }
