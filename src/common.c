@@ -73,10 +73,22 @@ String string_get_extension(String s)
   return STRING_EMPTY;
 }
 
+String string_copy(String s)
+{
+    char* data = malloc(s.size);
+    memcpy(data,s.data,s.size);
+    return (String){data,s.size};
+}
+
+static inline bool is_space(char c)
+{
+    return c == ' ' || c == '\n' || c == '\t';
+}
+
 String string_trim_begin(String s)
 {
     int i = 0;
-    while (isspace(s.data[i]))
+    while (is_space(s.data[i]))
     {
         i++;
     }
@@ -87,7 +99,7 @@ String string_trim_begin(String s)
 String string_trim_end(String s)
 {
     int i = s.size-1;
-    while (isspace(s.data[i]))
+    while (is_space(s.data[i]))
     {
         i--;
     }
@@ -156,6 +168,11 @@ String_Builder make_string_builder(int initial_capacity) {
     sb.cursor = 0;
     sb.buffer[0] = '\0';
     return sb;
+}
+
+void sb_remove(String_Builder* sb, int amount)
+{
+    sb->cursor = MAX(0, sb->cursor - amount);
 }
 
 void sb_resize(String_Builder* sb) {

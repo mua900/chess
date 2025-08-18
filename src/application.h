@@ -21,7 +21,7 @@ typedef struct {
     SDL_Texture* piece_textures[CHESS_PIECE_TYPE_COUNT*2];
 } Assets;
 
-bool load_piece_set(Assets* assets, String piece_set);
+bool load_piece_set(SDL_Renderer* renderer, Assets* assets, String piece_set);
 
 typedef struct Application {
     Window window;

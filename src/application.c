@@ -1,5 +1,7 @@
 #include "application.h"
 
+#include <SDL3_image/SDL_image.h>
+
 bool create_application(Application* app, const char* base_path)
 {
   if (!SDL_Init(SDL_INIT_VIDEO))
@@ -16,7 +18,10 @@ bool create_application(Application* app, const char* base_path)
   }
 
   app->config = read_configuration(make_string(base_path));
-  load_piece_set(&app->assets, app->config.piece_set);
+  if (!load_piece_set(app->window.renderer, &app->assets, app->config.piece_set))
+  {
+    LOG_ERRORF("Could not load piece set %s", app->config.piece_set.data);
+  }
 
   app->quit = false;
   return true;
@@ -134,8 +139,7 @@ bool parse_config(String configuration, Config* conf)
 
       if (string_compare(key,MAKE_STRING("piece_set")))
       {
-        conf->piece_set = value;
-        
+        conf->piece_set = string_copy(value);
       }
     }
   }
@@ -193,9 +197,11 @@ Config read_configuration(String base_path)
   return config;
 }
 
+struct Asset_Loader_Context { SDL_Renderer* renderer; Assets* assets; String_Builder* path; };
+
 SDL_EnumerationResult load_piece(void* userdata, const char* dirname, const char* fname)
 {
-  Assets* assets = (Assets*)userdata;
+  struct Asset_Loader_Context* ctx = (struct Asset_Loader_Context*)userdata;
 
   const char* piece_names[] = {
     "wK.png","wQ.png","wR.png","wB.png","wN.png","wP.png",
@@ -204,23 +210,37 @@ SDL_EnumerationResult load_piece(void* userdata, const char* dirname, const char
 
   for (int i = 0; i < ARRAY_SIZE(piece_names); i++)
   {
-    if (strcmp(piece_names[i],fname))
+    if (string_compare(make_string(piece_names[i]),make_string(fname)))
     {
-      
+      sb_append(ctx->path, make_string(fname));
+      SDL_Texture* texture = IMG_LoadTexture(ctx->renderer, sb_c_string(ctx->path));
+      if (!texture)
+      {
+        printf("Could not load: %s\n", sb_c_string(ctx->path));
+        return SDL_ENUM_FAILURE;
+      }
+
+      sb_remove(ctx->path, strlen(piece_names[i]));
+
+      ctx->assets->piece_textures[i] = texture;
+      break;
     }
   }
 
   return SDL_ENUM_CONTINUE;
 }
 
-bool load_piece_set(Assets* assets, String piece_set)
+bool load_piece_set(SDL_Renderer* renderer, Assets* assets, String piece_set)
 {
   String_Builder sb = make_string_builder(256);
   sb_append(&sb, MAKE_STRING("../asset/"));
   sb_append(&sb, piece_set);
   sb_append_char(&sb, '/');
 
-  SDL_EnumerateDirectory(sb_c_string(&sb), load_piece, assets);
+  if (!SDL_EnumerateDirectory(sb_c_string(&sb), load_piece, &(struct Asset_Loader_Context){.renderer=renderer,.assets=assets,.path=&sb}))
+  {
+    return false;
+  }
 
   sb_free(&sb);
   return true;

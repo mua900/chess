@@ -27,6 +27,7 @@ bool string_compare(String s1, String s2);
 String string_slice(String s, int start, int end);
 String string_trim(String s);
 String string_get_extension(String s);
+String string_copy(String s);
 
 typedef struct {
   int x, y;
@@ -95,6 +96,7 @@ String_Builder make_string_builder(int initial_capacity);
 void sb_append(String_Builder* sb, String string);
 void sb_append_char(String_Builder* sb, char ch);
 const char* sb_c_string(String_Builder* sb);
+void sb_remove(String_Builder* sb, int amount);  // remove the last n characters from the buffer
 void sb_clear_and_append(String_Builder* sb, String s);
 void sb_append_many(String_Builder* sb, String* strings, int n);
 void sb_free(String_Builder* sb);
