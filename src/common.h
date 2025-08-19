@@ -3,6 +3,8 @@
 
 #include "std_include.h"
 
+[[noreturn]] void panic(char const * const msg);
+
 typedef int8_t s8;
 typedef int16_t s16;
 typedef int32_t s32;
@@ -101,5 +103,25 @@ void sb_clear_and_append(String_Builder* sb, String s);
 void sb_append_many(String_Builder* sb, String* strings, int n);
 void sb_free(String_Builder* sb);
 void sb_clear(String_Builder* sb);
+
+static inline bool is_digit (char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+static inline bool is_alpha_lower (char c)
+{
+    return c >= 'a' && c <= 'z';
+}
+
+static inline bool is_alpha_upper (char c)
+{
+    return c >= 'A' && c <= 'Z';
+}
+
+static inline bool is_alpha (char c)
+{
+    return is_alpha_lower(c) || is_alpha_upper(c);
+}
 
 #endif

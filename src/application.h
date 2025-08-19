@@ -26,6 +26,8 @@ bool load_piece_set(SDL_Renderer* renderer, Assets* assets, String piece_set);
 typedef struct Application {
     Window window;
 
+    Chess_Context chess;
+
     Config config;
     Assets assets;
 

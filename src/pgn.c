@@ -1,4 +1,7 @@
 #include "pgn.h"
+
+// @todo
+
 bool parse_pgn_game(String s, int* cursor, Chess_Game_List* games)
 {  
   return true;
@@ -11,8 +14,5 @@ bool parse_pgn(String s, Chess_Game_List* games)
     {
       return false;
     }
-  
-
-  
   return true;
 }

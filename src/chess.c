@@ -1,6 +1,28 @@
 #include "chess.h"
+#include "fen.h"
 
 #define BITBOARD(x) ((Bitboard)1 << (x))
+
+Chess_Game_List make_chess_game_list()
+{
+  int cap = 10;
+  Chess_Game* data = (Chess_Game*)malloc(sizeof(Chess_Game)*cap);
+  return (Chess_Game_List){.data=data,.size=0,.cap=cap};
+}
+
+void chess_game_list_add(Chess_Game_List* list, Chess_Game* game)
+{
+  if (list->size+1>=list->cap)
+  {
+    int ncap = list->cap*2;
+    Chess_Game* ndata = (Chess_Game*)malloc(sizeof(Chess_Game)*ncap);
+    memcpy(ndata,list->data,sizeof(Chess_Game)*list->size);
+    list->cap = ncap;
+  }
+
+  list->data[list->size] = *game;
+  list->size += 1;
+}
 
 ivec2 get_board_coord(u8 index)
 {
@@ -12,7 +34,7 @@ int get_board_index(ivec2 c)
   return c.y*8+c.x;
 }
 
-Bitboard get_lowest_piece(Bitboard* board)
+Bitboard get_next_piece(Bitboard* board)
 {
   Bitboard b = *board-1;
   Bitboard p = *board & ~(b);
@@ -29,27 +51,6 @@ Board_Location get_board_location(Bitboard x)
   return (Board_Location){index,file,rank};
 }
 
-Chess_Game_List make_chess_game_list()
-{
-  struct Chess_Game_List_Node* head = malloc(sizeof(struct Chess_Game_List_Node));
-  head->game = (Chess_Game){};
-  head->next = NULL;
-  return (Chess_Game_List){.head=head};
-}
-
-void chess_game_list_add(Chess_Game_List* list, Chess_Game* game)
-{
-  struct Chess_Game_List_Node** node_ptr = &list->head;
-  while (*node_ptr)
-    {
-      node_ptr = &(*node_ptr)->next;
-    }
-
-  (*node_ptr)->next = malloc(sizeof(struct Chess_Game_List_Node));
-  (*node_ptr)->next->game = *game;
-  (*node_ptr)->next->next = NULL;
-}
-
 #define SCAN_DIRECTION(p_start,p_step,p_cond,p_index,p_moves,p_friendly,p_opponent)     \
   for (int it = p_start; p_cond; it+=p_step)  {                                         \
     Bitboard move = BITBOARD(p_index);                                                  \
@@ -62,7 +63,7 @@ void generate_orthogonal_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard
 {
     while (pieces)
     {
-        Bitboard square = get_lowest_piece(&pieces);
+        Bitboard square = get_next_piece(&pieces);
         Board_Location location = get_board_location(square);
         Bitboard moves = 0;
   
@@ -80,7 +81,7 @@ void generate_diagonal_moves(Chess_Moves* pos_moves, Bitboard pieces, Bitboard f
 {
     while (pieces)
     {
-        Bitboard piece = get_lowest_piece(&pieces);
+        Bitboard piece = get_next_piece(&pieces);
         Board_Location location = get_board_location(piece);
         Bitboard moves = 0;
 
@@ -245,6 +246,48 @@ void generate_moves(Chess_Position* position)
   generate_knight_moves(&position->moves, (position->board.pieces[CHESS_PIECE_TYPE_KNIGHT]) & position->board.black, position->board.black, position->board.white);
   generate_king_moves(&position->moves, (position->board.pieces[CHESS_PIECE_TYPE_KING]) & position->board.black, position->board.black, position->board.white);
 }
+
+
+Chess_Position make_chess_position(Chess_Board* board)
+{
+  Chess_Position position = (Chess_Position){.board=*board};
+  generate_moves(&position);
+  return position;
+}
+
+Chess_Context create_chess_context_pgn(String pgn, bool* success)
+{
+  panic("Not implemented");
+}
+
+Chess_Context create_chess_context_fen(String fen, bool* success)
+{
+  Chess_Context context = {};
+  Chess_Board board = parse_fen(fen, success);
+  if (!(*success)) return context;
+  context = (Chess_Context){
+    .game_list = make_chess_game_list(),
+    .selected = 0,
+  };
+
+  Chess_Game game = {};
+  game.position = make_chess_position(&board);
+  chess_game_list_add(&context.game_list, &game);
+
+  return context;
+}
+
+Chess_Context create_chess_context()
+{
+  Chess_Context context;
+
+  context.game_list = make_chess_game_list();
+  context.selected = 0;
+
+  return context;
+}
+
+
 
 void print_board(Chess_Board* board)
 {

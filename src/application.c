@@ -23,6 +23,9 @@ bool create_application(Application* app, const char* base_path)
     LOG_ERRORF("Could not load piece set %s", app->config.piece_set.data);
   }
 
+  app->chess = create_chess_context();
+
+
   app->quit = false;
   return true;
 }
@@ -97,9 +100,40 @@ void draw_checkerboard(Window window, Color white, Color black, vec2 pos, float 
   SDL_SetRenderDrawColor(window.renderer, COLOR_ARG(save_color));
 }
 
+void draw_pieces(const Window window, const Chess_Context chess, const Assets* assets, vec2 board_pos, float cell_size)
+{
+  Chess_Board* board = &(chess.game_list.data[chess.selected].position.board);
+  for (int i = 0; i < CHESS_PIECE_TYPE_COUNT; i++)
+  {
+    Bitboard pieces = board->white & board->pieces[i];
+
+    vec2 texture_size;
+    SDL_GetTextureSize(assets->piece_textures[i],&texture_size.x,&texture_size.y);
+
+    while (pieces)
+    {
+      Bitboard square = get_next_piece(&pieces);
+      Board_Location location = get_board_location(square);
+      location.file = 7 - location.file;
+      SDL_RenderTexture(window.renderer, assets->piece_textures[i],
+        &(SDL_FRect){
+          .x=0,.y=0,
+          .w=texture_size.x,.h=texture_size.y
+        },
+        &(SDL_FRect){
+          .x=board_pos.x+location.file*cell_size,
+          .y=board_pos.y+location.rank*cell_size,
+          .w=cell_size,
+          .h=cell_size,
+      });
+    }
+  }
+}
+
 void application_draw(Application* app)
 {
   SDL_Renderer* renderer = app->window.renderer;
+
   Window window = app->window;
   SDL_SetRenderDrawColor(renderer, 0xaa, 0x66, 0x33, 0xff);
   SDL_RenderClear(renderer);
@@ -111,6 +145,7 @@ void application_draw(Application* app)
   float cell_size = board_size / 8;
 
   draw_checkerboard(window,(Color){0x11,0x11,0x11,0xff},(Color){0xaa,0xaa,0xaa,0xff},board_pos,cell_size);
+  draw_pieces(window, app->chess, &app->assets, board_pos, cell_size);
 
   SDL_RenderPresent(renderer);
 }
@@ -151,9 +186,14 @@ const Config DefaultConfiguration = (Config){
   .piece_set = MAKE_STRING("alpha")
 };
 
+struct Config_Context{
+  Config* config;
+  String_Builder* path;
+};
+
 SDL_EnumerationResult find_and_load_config(void* user_data, const char* dir_name, const char* fname)
 {
-  Config* config = (Config*)user_data;
+  struct Config_Context* ctx = (struct Config_Context*)user_data;
 
   const String config_file_names[] = {
     MAKE_STRING("caro.conf"),
@@ -168,16 +208,17 @@ SDL_EnumerationResult find_and_load_config(void* user_data, const char* dir_name
     String conf_file_name = config_file_names[i];
     if (string_compare(file_name, conf_file_name))
     {
+      sb_append(ctx->path, make_string(fname));
+
       bool load_success;
-      File file = load_file(fname, &load_success);
+      File file = load_file(sb_c_string(ctx->path), &load_success);
 
       LOG_MSGF("Configuration file %s loaded", fname);
       if (load_success)
       {
-        bool parse_success = parse_config(file, config);
+        bool parse_success = parse_config(file, ctx->config);
 
         unload_file(file);
-        break;
       }
 
       return SDL_ENUM_SUCCESS;
@@ -192,7 +233,11 @@ Config read_configuration(String base_path)
 {
   Config config = DefaultConfiguration;
 
-  SDL_EnumerateDirectory(SDL_GetBasePath(), find_and_load_config, &config);
+  String_Builder sb = make_string_builder(128);
+  sb_append(&sb,make_string(SDL_GetBasePath()));
+  SDL_EnumerateDirectory(SDL_GetBasePath(), find_and_load_config, &(struct Config_Context){.config=&config,.path=&sb});
+
+  sb_free(&sb);
 
   return config;
 }

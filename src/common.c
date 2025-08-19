@@ -1,5 +1,11 @@
 #include "common.h"
 
+[[noreturn]]
+void panic(char const * const msg)
+{
+    fprintf(stderr, "[PANIC]: %s\n", msg);
+}
+
 int pop_lsb(uint64_t* n)
 {
   int index = __builtin_ctzll(*n);
