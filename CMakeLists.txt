@@ -13,6 +13,8 @@ add_executable(caro
     src/common.c
     src/chess.h
     src/chess.c
+    src/fen.h
+    src/fen.c
 )
 
 add_subdirectory(vendor/SDL)
