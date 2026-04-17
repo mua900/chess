@@ -11,6 +11,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
+#include <nanosvg.h>
+
 struct Window {
     SDL_Window* window;
 };
@@ -34,7 +36,7 @@ enum Events {
 
 struct PieceSet {
     MutableString name;
-    SDL_Texture* pieces[PIECE_TYPE_PER_SIDE * 2];
+    NSVGimage* pieces[PIECE_TYPE_PER_SIDE * 2];
 };
 
 class Application {
@@ -87,9 +89,9 @@ private:
     // void toggle_text_input();
     // bool update_input_string();
 
-    bool read_asset_catalog();
+    bool read_asset_catalog(String_Builder& path);
 
-    bool load_piece_set(String folder_path);
+    bool load_piece_set(String_Builder& path);
 
     bool set_eval_string(String s);
     bool set_eval_string_left(String s);
@@ -105,6 +107,9 @@ private:
 
     void clear_text_input_selection();
 };
+
+void get_base_path(String_Builder& builder);
+void get_to_run_path(String_Builder& builder, const char* path);
 
 Text create_text(SDL_Renderer* renderer, String text, Font font, Color color);
 

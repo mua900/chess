@@ -55,7 +55,6 @@ struct ChessState {
 
 struct ChessPosition {
     ChessState board;
-    
 };
 
 struct ChessMove {

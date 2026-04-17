@@ -320,45 +320,51 @@ int String_Builder::ensure_size(int size) {
     return 0;
 }
 
-void String_Builder::append(String string) {
+int String_Builder::append(String string) {
     ensure_size(cursor + string.size);
 
     memcpy(buffer + cursor, string.data, string.size);
     cursor += string.size;
+    return string.size;
 }
 
-void String_Builder::append_char(char ch) {
+int String_Builder::append_char(char ch) {
     ensure_size(cursor + 1);
 
     buffer[cursor] = ch;
     cursor += 1;
+    return 1;
 }
 
-void String_Builder::append_integer(int n)
+int String_Builder::append_integer(int n)
 {
     char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%d", n);
+    int len = snprintf(buffer, sizeof(buffer), "%d", n);
     append(make_string(buffer));
+    return len;
 }
 
-void String_Builder::append_hex(int n) {
+int String_Builder::append_hex(int n) {
     char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%x", n);
+    int len = snprintf(buffer, sizeof(buffer), "%x", n);
     append(make_string(buffer));
+    return len;
 }
 
-void String_Builder::append_float(float n) {
+int String_Builder::append_float(float n) {
 	char buffer[128];
-	snprintf(buffer, sizeof(buffer), "%1.3f", n);
+	int len = snprintf(buffer, sizeof(buffer), "%1.3f", n);
 	append(make_string(buffer));
+	return len;
 }
 
-void String_Builder::clear_and_append(String s) {
+int String_Builder::clear_and_append(String s) {
     cursor = 0;
     append(s);
+    return s.size;
 }
 
-void String_Builder::append_many(String* strings, int n) {
+int String_Builder::append_many(String* strings, int n) {
     int total_length = 0;
     for (int i = 0; i < n; i++) {
         total_length += strings[i].size;
@@ -369,6 +375,8 @@ void String_Builder::append_many(String* strings, int n) {
         memcpy(this->buffer + this->cursor, strings[i].data, strings[i].size);
         cursor += strings[i].size;
     }
+
+    return total_length;
 }
 
 const char* String_Builder::c_string() {

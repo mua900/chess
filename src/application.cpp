@@ -6,6 +6,8 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_mixer/SDL_mixer.h>
 
+#include <nanosvg.h>
+
 bool Application::initialize()
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -56,9 +58,20 @@ bool Application::initialize()
         }
     }
 
-    if (!read_asset_catalog()) {
+    String_Builder path(256);
+
+    get_base_path(path);
+    if (!read_asset_catalog(path)) {
         log_error("Could not read asset catalog\n");
         // return false;
+    }
+
+    get_to_run_path(path, "asset/piece_set/chessnut/");
+    if (!load_piece_set(path))
+    {
+        // @todo a fallback simple procedural piece set
+        log_error("Could not load default piece set");
+        return false;
     }
 
     quit = false;
@@ -85,24 +98,56 @@ Text create_text(SDL_Renderer* renderer, String text, Font font, Color color)
     return Text(texture, text);
 }
 
-bool Application::read_asset_catalog()
+bool Application::read_asset_catalog(String_Builder& path)
 {
-    String_Builder sb(256);
-    const char* base_path = SDL_GetBasePath();
-
-    sb.append(make_string(base_path));
-
     const char* desc_name = "run_tree.txt";
-    sb.append(make_string(desc_name));
-    bool parse_description = parse_assets(sb.c_string(), m_catalog);
+    path.append(make_string(desc_name));
+    bool parse_description = parse_assets(path.c_string(), m_catalog);
 
     return parse_description;
 }
 
-
-bool Application::load_piece_set(String folder_path)
+void get_base_path(String_Builder& builder)
 {
-    return false;
+    const char* base_path = SDL_GetBasePath();
+    builder.clear_and_append(make_string(base_path));
+}
+
+void get_to_run_path(String_Builder& builder, const char* path)
+{
+    get_base_path(builder);
+    builder.append(String(path));
+}
+
+bool Application::load_piece_set(String_Builder& path)
+{
+    const char* expected_names[PIECE_TYPE_PER_SIDE * 2] = {
+        "wK", "wQ", "wR", "wB", "wN", "wP",
+        "bK", "bQ", "bR", "bB", "bN", "bP",
+    };
+
+    for (int i = 0; i < ARRAY_SIZE(expected_names); i++)
+    {
+        int file = 0;
+        file += path.append(String(expected_names[i]));
+        file += path.append(String(".svg"));
+
+        NSVGimage* image = NULL;
+        // @todo think about dpi
+        image = nsvgParseFromFile(path.c_string(), "px", 96);
+
+        if (!image)
+        {
+            path.remove(file);
+            return false;
+        }
+        log_info("Piece: %s, Width: %.1f, Height: %.1f\n", path.c_string(), image->width, image->height);
+        path.remove(file);
+
+        piece_set.pieces[i] = image;
+    }
+
+    return true;
 }
 
 void Application::handle_events()

@@ -16,6 +16,11 @@ add_executable(application
 	src/asset.hpp
 	src/asset.cpp
 	src/main.cpp
+
+	src/vendor.cpp
+
+	# sources from vendor libraries
+	vendor/nanosvg/nanosvg.h
 )
 
 add_library(chess
@@ -63,6 +68,8 @@ target_include_directories(application PRIVATE vendor/SDL-3.4.4/include/)
 target_include_directories(application PRIVATE vendor/SDL_image-3.4.2/include/)
 target_include_directories(application PRIVATE vendor/SDL_mixer-3.2.0/include)
 target_include_directories(application PRIVATE vendor/SDL_ttf-3.2.2/include/)
+
+target_include_directories(application PRIVATE vendor/nanosvg)
 
 target_link_libraries(
 	application

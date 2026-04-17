@@ -230,16 +230,16 @@ struct String_Builder {
     }
 
     void create(int initial_capacity);
-    void append(String string);
-    void append_char(char ch);
-    void append_integer(int n);
-    void append_hex(int n);
-	void append_float(float n);
+    int append(String string);
+    int append_char(char ch);
+    int append_integer(int n);
+    int append_hex(int n);
+	int append_float(float n);
     const char* c_string();
     void remove(int amount);  // remove the last n characters from the buffer
     void remove_slice(int start, int end);
-    void clear_and_append(String s);
-    void append_many(String* strings, int n);
+    int clear_and_append(String s);
+    int append_many(String* strings, int n);
     void free_buffer();
     void clear();
     String to_string();
