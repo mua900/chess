@@ -175,6 +175,10 @@ long get_file_size(FILE* file) {
 
 bool load_file(const char* filepath, BinaryData& data) {
 	FILE* handle = fopen(filepath, "r");
+    if (!handle)
+    {
+        return false;
+    }
 
 	auto filesize = get_file_size(handle);
 

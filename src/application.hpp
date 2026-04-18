@@ -41,6 +41,8 @@ struct PieceSet {
 
 class Application {
 public:
+    ChessGame game;
+
     Window m_window = {};
     RenderContext m_render = {};
     Input m_input = {};
@@ -96,7 +98,6 @@ private:
     bool set_eval_string(String s);
     bool set_eval_string_left(String s);
     bool set_eval_string_right(String s);
-    bool select_playback_device(SDL_AudioDeviceID device);
 
     void render_rectangle(Rectangle rect, Color color, bool center = true);
     void render_textured_rectangle(Rectangle rect, SDL_Texture* texture, Color color, bool center = true);
