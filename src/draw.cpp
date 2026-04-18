@@ -192,24 +192,19 @@ void draw_capsule(const RenderContext& context, vec2 center0, vec2 center1, floa
     #undef NVERTICES
 }
 
-// @todo antialiasing or whatever else to make these look better
 void draw_quadratic_bezier(const RenderContext& context, vec2 p0, vec2 p1, vec2 p2, float thick, ColorF color)
 {
     vec2 prev = p0;
 
-    const int resolution = 64;
+    const int resolution = 32;
 
-    float t = 0;
     for (int i = 0; i < resolution; i++)
     {
-        vec2 q0 = lerp2(p0, p1, t);
-        vec2 q1 = lerp2(p1, p2, t);
-
-        vec2 p = lerp2(q0, q1, t);
+        float t = float(i) / float(resolution);
+        float it = 1.0f - t;
+        vec2 p = (it * it * p0) + (2.0f * it * t * p1) + (t * t * p2);
         draw_segment(context, prev, p, thick, color);
         prev = p;
-
-        t += 1.0f / float(resolution);
     }
 }
 
@@ -219,20 +214,12 @@ void draw_cubic_bezier(const RenderContext& context, vec2 p0, vec2 p1, vec2 p2, 
 
     const int resolution = 32;
 
-    float t = 0;
     for (int i = 0; i < resolution; i++)
     {
-        vec2 q0 = lerp2(p0, p1, t);
-        vec2 q1 = lerp2(p1, p2, t);
-        vec2 q2 = lerp2(p2, p3, t);
-
-        vec2 w0 = lerp2(q0, q1, t);
-        vec2 w1 = lerp2(q1, q2, t);
-
-        vec2 p = lerp2(w0, w1, t);
+        float t = float(i) / float(resolution);
+        float it = 1.0f - t;
+        vec2 p = (it * it * it * p0) + (3.0f * it * it * t * p1) + (3.0f * it * t * t * p2) + (t * t * t * p3);
         draw_segment(context, prev, p, thick, color);
         prev = p;
-
-        t += 1.0f / float(resolution);
     }
 }

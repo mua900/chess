@@ -144,6 +144,10 @@ bool Application::load_piece_set(String_Builder& path)
         log_info("Piece: %s, Width: %.1f, Height: %.1f\n", path.c_string(), image->width, image->height);
         path.remove(file);
 
+        if (piece_set.pieces[i])
+        {
+            nsvgDelete(piece_set.pieces[i]);
+        }
         piece_set.pieces[i] = image;
     }
 
@@ -305,6 +309,21 @@ void Application::draw_board()
         {
             Color color = ((i + j) % 2 == 0) ? WhiteSquareColor : BlackSquareColor;
             render_rectangle(Rectangle(margin_x + i * square_size, margin_y + j * square_size, square_size, square_size), color);
+        }
+    }
+
+    for (int i = 0; i < PIECE_TYPE_PER_SIDE * 2; i++)
+    {
+        for (NSVGshape* shape = piece_set.pieces[i]->shapes; shape != NULL; shape = shape->next)
+        {
+            for (NSVGpath* path = shape->paths; path != NULL; path = path->next)
+            {
+                for (int i = 0; i < path->npts - 1; i += 3)
+                {
+                    float* p = &path->pts[i * 2];
+                    draw_cubic_bezier(m_render, vec2(p[0],p[1]), vec2(p[2],p[3]), vec2(p[4],p[5]), vec2(p[6],p[7]), 1, Color(1.0, 0.0, 0.0));
+                }
+            }
         }
     }
 }
