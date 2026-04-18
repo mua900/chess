@@ -15,6 +15,8 @@ add_executable(application
 	src/ui.cpp
 	src/asset.hpp
 	src/asset.cpp
+	src/draw.hpp
+	src/draw.cpp
 	src/main.cpp
 
 	src/vendor.cpp

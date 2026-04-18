@@ -6,6 +6,7 @@
 #include "ui.hpp"
 #include "asset.hpp"
 #include "input.hpp"
+#include "draw.hpp"
 #include "chess.hpp"
 
 #include <SDL3/SDL.h>
@@ -15,11 +16,6 @@
 
 struct Window {
     SDL_Window* window;
-};
-
-struct RenderContext {
-    vec2 render_size;
-    SDL_Renderer* renderer;
 };
 
 struct Event_Timeout {
