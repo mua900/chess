@@ -6,13 +6,18 @@
 
 #define PIECE_TYPE_PER_SIDE 6
 
-enum PieceTypes {
+enum PieceType {
     King   = 0,
     Queen  = 1,
     Rook   = 2,
     Bishop = 3,
     Knight = 4,
     Pawn   = 5,
+};
+
+enum class ChessColor {
+    White,
+    Black,
 };
 
 #define PIECE_COLOR_BIT BIT(3)
@@ -39,10 +44,10 @@ BoardPosition index_to_board_position(SquareIndex index);
 SquareIndex board_position_to_index(BoardPosition pos);
 
 struct ChessState {
-    Bitboard white;
-    Bitboard black;
-    BoardPosition white_king;
-    BoardPosition black_king;
+    Bitboard white = {};
+    Bitboard black = {};
+    BoardPosition white_king = {};
+    BoardPosition black_king = {};
     Bitboard queen = 0;
     Bitboard rook = 0;
     Bitboard bishop = 0;
@@ -54,14 +59,17 @@ struct ChessState {
     bool bcr;
 
     SquareIndex en_passant_square;
+
+    void put_piece(PieceType type, ChessColor color, SquareIndex index);
+    void put_piece(PieceType type, ChessColor color, BoardPosition position);
 };
 
 struct ChessPosition {
-    ChessState board;
-    Bitboard white_moves;
-    Bitboard black_moves;
-    Bitboard attack_squares_white;
-    Bitboard attack_squares_black;
+    ChessState board = {};
+    Bitboard white_moves = {};
+    Bitboard black_moves = {};
+    Bitboard attack_squares_white = {};
+    Bitboard attack_squares_black = {};
 };
 
 struct ChessMove {
@@ -85,5 +93,7 @@ ChessPosition calculate_position(ChessState state);
 Bitboard calculate_orthogonal_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
 Bitboard calculate_diagonal_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
 Bitboard calculate_knight_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
+
+SquareIndex parse_square(char rank, char file);
 
 #endif // _CHESS_H

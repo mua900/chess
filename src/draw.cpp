@@ -93,7 +93,7 @@ void draw_circle(const RenderContext& context, vec2 position, float radius, Colo
     vertices[0] = center;
 
     // the angle between vertices and it's sin and cos
-    const float angle = (2.0 * M_PI) / float(NVERTICES);
+    const float angle = CONSTANT_TAU / float(NVERTICES);
     const float c = std::cosf(angle);
     const float s = std::sinf(angle);
 
@@ -140,7 +140,7 @@ void draw_capsule(const RenderContext& context, vec2 center0, vec2 center1, floa
     vertices[0].color = SDL_FColor { COLOR_ARG(color) };
 
     // the angle between vertices and it's sin and cos
-    const float angle = (2.0 * M_PI) / float(NVERTICES);
+    const float angle = CONSTANT_TAU / float(NVERTICES);
     const float c = std::cosf(angle);
     const float s = std::sinf(angle);
 

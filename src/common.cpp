@@ -12,7 +12,7 @@ unsigned int pop_count(u64 x)
     x = (x & (u64)0x00FF00FF00FF00FF) + ((x >> 8)  & (u64)0x00FF00FF00FF00FF);
     x = (x & (u64)0x0000FFFF0000FFFF) + ((x >> 16) & (u64)0x0000FFFF0000FFFF);
     x = (x & (u64)0x00000000FFFFFFFF) + ((x >> 32) & (u64)0x00000000FFFFFFFF);
-    return x;
+    return unsigned int(x);
 }
 
 NORETURN
@@ -35,12 +35,12 @@ int pop_msb(u64* x) {
 }
 
 int string_length(const char* cstr) {
-    return strlen(cstr);
+    return (int)strlen(cstr);
 }
 
 String make_string(const char* s)
 {
-    int len = strlen(s);
+    int len = (int)strlen(s);
     return { s, len };
 }
 
@@ -243,6 +243,11 @@ String File::read_string() {
 	fread(&size, sizeof(size), 1, handle);
 
 	char* data = (char*) malloc(size + 1);
+
+    if (!data)
+    {
+        panic("Malloc fail");
+    }
 
 	fread(data, sizeof(data[0]), size, handle);
 	data[size] = '\0';

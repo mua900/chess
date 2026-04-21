@@ -15,11 +15,191 @@ SquareIndex board_position_to_index(BoardPosition pos)
     return pos.row * 8 + pos.column;
 }
 
-ChessState parse_fen_string(String fen)
+bool parse_fen_string(ChessState* state, String fen)
 {
-    ChessState state;
-    // @todo
-    return state;
+    int cursor = 0;
+
+    if (fen.size < 25)  // shortest possible fen string
+        return false;
+
+#define ADVANCE()   \
+    cursor += 1; if (cursor >= fen.size) return false;
+
+    int row = 7;
+    while (row >= 0)
+    {
+        int column = 0;
+        while (column < 8)
+        {
+            if (is_numeric(fen[cursor]))
+            {
+                int n = fen[cursor] - '0';
+                if (column + n > 8)
+                {
+                    return false;
+                }
+
+                column += n;
+            }
+            else if (is_uppercase(fen[cursor]))
+            {
+                PieceType type;
+
+                switch (fen[cursor])
+                {
+                case 'K':
+                    type = PieceType::King;
+                    break;
+                case 'Q':
+                    type = PieceType::Queen;
+                    break;
+                case 'R':
+                    type = PieceType::Rook;
+                    break;
+                case 'B':
+                    type = PieceType::Bishop;
+                    break;
+                case 'N':
+                    type = PieceType::Knight;
+                    break;
+                case 'P':
+                    type = PieceType::Pawn;
+                    break;
+                default:
+                    return false;
+                }
+
+                state->put_piece(type, ChessColor::White, BoardPosition(row, column);
+                column += 1;
+            }
+            else if (is_lowercase(fen[cursor]))
+            {
+                PieceType type;
+
+                switch (fen[cursor])
+                {
+                case 'k':
+                    type = PieceType::King;
+                    break;
+                case 'q':
+                    type = PieceType::Queen;
+                    break;
+                case 'r':
+                    type = PieceType::Rook;
+                    break;
+                case 'b':
+                    type = PieceType::Bishop;
+                    break;
+                case 'n':
+                    type = PieceType::Knight;
+                    break;
+                case 'p':
+                    type = PieceType::Pawn;
+                    break;
+                default:
+                    return false;
+                }
+
+                state->put_piece(type, ChessColor::Black, BoardPosition(row, column);
+                column += 1;
+            }
+            else if (fen[cursor] == '/')
+            {
+                if (column != 8)
+                {
+                    return false;
+                }
+
+                column = 0;
+                row -= 1;
+            }
+
+            ADVANCE();
+        }
+    }
+
+    if (fen[cursor] != ' ')
+        return false;
+    ADVANCE();
+
+    ChessColor side_to_move = ChessColor::White;
+    if (fen[cursor] == 'w')
+        side_to_move = ChessColor::White;
+    else if (fen[cursor] == 'b')
+        side_to_move = ChessColor::Black;
+    else
+        return false;
+
+    ADVANCE();
+
+    if (fen[cursor] != ' ')
+        return false;
+    ADVANCE();
+
+    {
+        state->wcl = false;
+        state->wcr = false;
+        state->bcl = false;
+        state->bcr = false;
+        int save = cursor;
+        if (fen[cursor] == 'K') { state->wcl = true; ADVANCE(); }
+        if (fen[cursor] == 'Q') { state->wcr = true; ADVANCE(); }
+        if (fen[cursor] == 'k') { state->bcl = true; ADVANCE(); }
+        if (fen[cursor] == 'q') { state->bcr = true; ADVANCE(); }
+
+        if (cursor == save)
+        {
+            if (fen[cursor] == '-')
+                ADVANCE();
+            else
+                return false;
+        }
+    }
+
+    if (fen[cursor] != ' ')
+        return false;
+    ADVANCE();
+
+    if (fen[cursor] == '-')
+    {
+        ADVANCE();
+    }
+    else
+    {
+        // bounds check
+        SquareIndex square = parse_square(fen[cursor], fen[cursor + 1]);
+        if (square == NullSquareIndex)
+        {
+            return false;
+        }
+
+        state->en_passant_square = square;
+        cursor += 2;
+        if (cursor >= fen.size)
+            return false;
+    }
+
+    if (fen[cursor] != ' ')
+        return false;
+    cursor += 1;
+
+    String half_move_string = string_slice_to_character(fen, cursor, ' ');
+    bool half_move_success = false;
+    int half_move_counter = string_to_integer(half_move_string, &half_move_success);
+    if (!half_move_success)
+        return false;
+
+    if (fen[cursor] != ' ')
+        return false;
+    ADVANCE();
+
+    String full_move_string = string_slice(fen, cursor, fen.size);
+    bool full_move_success = false;
+    int full_move_clock = string_to_integer(full_move_string, &full_move_success);
+    if (!full_move_success)
+        return false;
+
+    return true;
 }
 
 bool ChessGame::make_move(SquareIndex from, SquareIndex to)

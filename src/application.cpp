@@ -387,9 +387,10 @@ void Application::render_text_field(const Text_Field& text_field)
 
         SDL_SetRenderDrawColor(m_render.renderer, 0x33, 0x56, 0x74, 0xff);
 
-        SDL_FRect cursor = (SDL_FRect){ tf_area.x + text_field.m_cursor_pixel_x,
-                                        tf_area.y + text_field.m_cursor_pixel_y,
-                                        tf_area.w / 100, font_size };
+        SDL_FRect cursor = SDL_FRect { tf_area.x + text_field.m_cursor_pixel_x,
+                                       tf_area.y + text_field.m_cursor_pixel_y,
+                                       tf_area.w / 100,
+                                       font_size };
     }
 }
 

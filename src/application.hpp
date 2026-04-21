@@ -24,7 +24,7 @@ struct Event_Timeout {
 };
 
 enum Events {
-
+    EVENT_DUMMY,
     EVENT_COUNT,
 };
 

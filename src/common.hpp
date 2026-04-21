@@ -9,7 +9,7 @@
 #include <array>
 
 #define IS_MAX_UNSIGNED(x) ((x)+1==0)
-#define BIT(x) (1U << (x))
+#define BIT(x) ((uint64_t)1 << (x))
 
 typedef int8_t s8;
 typedef int16_t s16;
@@ -123,7 +123,6 @@ struct String {
 
 #define STRING_EMPTY ((String){.data=NULL,.size=0})
 #define CSTRING_LENGTH(s) (sizeof(s)-1)
-#define MAKE_STRING(s) (String){.data=s,.size=CSTRING_LENGTH(s)}  // not used
 
 #define SCOPE_STRING_EXP(p_s, p_name, p_size)				\
 	char p_name[p_size];  \
@@ -171,7 +170,7 @@ struct MutableString {
 
     void set_str(const char* str)
     {
-        int len = strlen(str);
+        int len = (int) strlen(str);
         ensure_size(len);
         memcpy(data, str, len * sizeof(char));
         size = len;

@@ -7,3 +7,7 @@ imgui.ini
 tmp/
 *.pch
 *.gch
+
+vendor/SDL*/external/*
+!vendor/SDL*/external/download.sh
+!vendor/SDL*/external/Get-GitModules.ps1
