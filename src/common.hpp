@@ -116,6 +116,7 @@ struct String {
     String (const char* d, int s) : data(d), size(s) {}
 	String (const BinaryData& b) : data((const char*)b.data), size(b.size) {}
 
+    char operator[](int index) const { return data[index]; }
     bool operator==(const String& other) const;
     void print(bool newline = false) const;
 	void trim();
@@ -314,6 +315,11 @@ static inline bool is_space(char c)
 static inline char to_lower_ascii(char c)
 {
     return is_alpha_upper(c) ? (c - 'A' + 'a') : (c);
+}
+
+static inline char to_upper_ascii(char c)
+{
+    return is_alpha_lower(c) ? (c - 'a' + 'A') : (c);
 }
 
 #define BOOL_STRING(b) ((b) ? ("true") : ("false"))

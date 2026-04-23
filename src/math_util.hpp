@@ -13,6 +13,7 @@ struct vec2 {
     float x = 0, y = 0;
     vec2() {}
     vec2(float p_x, float p_y) : x(p_x), y(p_y) {}
+    vec2(float p) : x(p), y(p) {}
 
     vec2 normalized() const
     {
@@ -140,7 +141,10 @@ inline Complex operator*(const Complex lhs, const Complex rhs)
 #define CONSTANT_TAU (CONSTANT_PI * 2.0)
 
 struct Rectangle {
-    float x, y, w, h;
+    float x = 0.0f;
+    float y = 0.0f;
+    float w = 0.0f;
+    float h = 0.0f;
 
     Rectangle() {}
     Rectangle(vec2 pos, vec2 scale) : x(pos.x), y(pos.y), w(scale.x), h(scale.y) {}
@@ -148,10 +152,14 @@ struct Rectangle {
         : x(p_x), y(p_y), w(p_w), h(p_h)
     {}
 
-    bool contains(vec2 p) const;
-    // the current rectangle assumes center to be the origin so shift it to be the top left corner
-    Rectangle center() const {
+    bool contains_top_left(vec2 p) const;
+    bool contains_centered(vec2 p) const;
+    // the current rectangle assumes center be the origin so shift it to be the top left corner
+    Rectangle to_top_left() const {
         return Rectangle(x - w / 2, y - h / 2, w, h);
+    }
+    Rectangle to_center() const {
+        return Rectangle(x + w / 2, y + h / 2, w, h);
     }
 };
 

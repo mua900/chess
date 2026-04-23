@@ -103,10 +103,17 @@ private:
     void render_dropdown(const Drop_Down_List& list, Color title_color, Color option_color);
 
     void clear_text_input_selection();
+
+    float calculate_board_size() const;
+    Rectangle calculate_square_area(int row, int column) const;
+
+    bool is_fullscreen() const;
+
+    static vec2 calculate_board_margin(vec2 render_size, float board_size);
 };
 
 void get_base_path(String_Builder& builder);
-void get_to_run_path(String_Builder& builder, const char* path);
+void get_to_run_tree_path(String_Builder& builder, const char* path);
 
 Text create_text(SDL_Renderer* renderer, String text, Font font, Color color);
 

@@ -37,7 +37,7 @@ struct BoardPosition {
 };
 
 using SquareIndex = uint8_t;
-#define NullSquareIndex SquareIndex(0xff);
+#define NullSquareIndex SquareIndex(0xff)
 
 Bitboard board_position_to_bitboard(BoardPosition pos);
 BoardPosition index_to_board_position(SquareIndex index);

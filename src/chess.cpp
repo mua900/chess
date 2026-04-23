@@ -23,7 +23,7 @@ bool parse_fen_string(ChessState* state, String fen)
         return false;
 
 #define ADVANCE()   \
-    cursor += 1; if (cursor >= fen.size) return false;
+    do { cursor += 1; if (cursor >= fen.size) return false; } while(0)
 
     int row = 7;
     while (row >= 0)
@@ -31,7 +31,7 @@ bool parse_fen_string(ChessState* state, String fen)
         int column = 0;
         while (column < 8)
         {
-            if (is_numeric(fen[cursor]))
+            if (is_digit(fen[cursor]))
             {
                 int n = fen[cursor] - '0';
                 if (column + n > 8)
@@ -41,7 +41,7 @@ bool parse_fen_string(ChessState* state, String fen)
 
                 column += n;
             }
-            else if (is_uppercase(fen[cursor]))
+            else if (is_alpha_upper(fen[cursor]))
             {
                 PieceType type;
 
@@ -69,10 +69,10 @@ bool parse_fen_string(ChessState* state, String fen)
                     return false;
                 }
 
-                state->put_piece(type, ChessColor::White, BoardPosition(row, column);
+                state->put_piece(type, ChessColor::White, BoardPosition(row, column));
                 column += 1;
             }
-            else if (is_lowercase(fen[cursor]))
+            else if (is_alpha_lower(fen[cursor]))
             {
                 PieceType type;
 
@@ -100,7 +100,7 @@ bool parse_fen_string(ChessState* state, String fen)
                     return false;
                 }
 
-                state->put_piece(type, ChessColor::Black, BoardPosition(row, column);
+                state->put_piece(type, ChessColor::Black, BoardPosition(row, column));
                 column += 1;
             }
             else if (fen[cursor] == '/')
@@ -150,7 +150,9 @@ bool parse_fen_string(ChessState* state, String fen)
         if (cursor == save)
         {
             if (fen[cursor] == '-')
+            {
                 ADVANCE();
+            }
             else
                 return false;
         }

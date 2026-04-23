@@ -58,7 +58,14 @@ vec2 get_direction_vector(float angle)
     return vec2(c, s);
 }
 
-bool Rectangle::contains(vec2 p) const
+bool Rectangle::contains_top_left(vec2 p) const
 {
-    return p.x >= x && p.y >= y && p.x <= x + w && p.y <= y + h;
+    return p.x >= x && p.x <= x + w &&
+        p.y >= y && p.y <= y + h;
+}
+
+bool Rectangle::contains_centered(vec2 p) const
+{
+    return p.x >= x - w / 2 && p.x <= x + w / 2 &&
+        p.y >= y - h / 2 && p.y <= y + h / 2;
 }

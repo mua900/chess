@@ -66,7 +66,7 @@ bool Application::initialize()
         // return false;
     }
 
-    get_to_run_path(path, "asset/piece_set/chessnut/");
+    get_to_run_tree_path(path, "asset/piece_set/chessnut/");
     if (!load_piece_set(path))
     {
         // @todo a fallback simple procedural piece set
@@ -113,7 +113,7 @@ void get_base_path(String_Builder& builder)
     builder.clear_and_append(make_string(base_path));
 }
 
-void get_to_run_path(String_Builder& builder, const char* path)
+void get_to_run_tree_path(String_Builder& builder, const char* path)
 {
     get_base_path(builder);
     builder.append(String(path));
@@ -213,7 +213,12 @@ bool Application::keyboard_input(SDL_KeyboardEvent keyboard)
         case SDL_SCANCODE_ESCAPE:
         {
             quit = true;
-            break;
+            return true;
+        }
+        case SDL_SCANCODE_F11:
+        {
+            SDL_SetWindowFullscreen(m_window.window, !is_fullscreen());
+            return true;
         }
     }
 
@@ -294,11 +299,9 @@ void Application::draw()
 
 void Application::draw_board()
 {
-    float percent = 0.8;
-    float board_size = MIN(m_render.render_size.x, m_render.render_size.y) * percent;
+    float board_size = calculate_board_size();
     float square_size = board_size / 8.0f;
-    float margin_x = (m_render.render_size.x - board_size) / 2;
-    float margin_y = (m_render.render_size.y - board_size) / 2;
+    vec2 margin = calculate_board_margin(m_render.render_size, board_size);
 
     const Color WhiteSquareColor = Color(0xAA, 0xAA, 0xAA);
     const Color BlackSquareColor = Color(0x22, 0x22, 0x22);
@@ -308,24 +311,45 @@ void Application::draw_board()
         for (int j = 0; j < 8; j++)
         {
             Color color = ((i + j) % 2 == 0) ? WhiteSquareColor : BlackSquareColor;
-            render_rectangle(Rectangle(margin_x + i * square_size, margin_y + j * square_size, square_size, square_size), color);
+            render_rectangle(Rectangle(margin.x + i * square_size, margin.y + j * square_size, square_size, square_size), color);
         }
     }
 
-    for (int i = 0; i < PIECE_TYPE_PER_SIDE * 2; i++)
+    for (int i = 0; i < 1/*PIECE_TYPE_PER_SIDE * 2 */; i++)
     {
-        for (NSVGshape* shape = piece_set.pieces[i]->shapes; shape != NULL; shape = shape->next)
-        {
-            for (NSVGpath* path = shape->paths; path != NULL; path = path->next)
-            {
-                for (int i = 0; i < path->npts - 1; i += 3)
-                {
-                    float* p = &path->pts[i * 2];
-                    draw_cubic_bezier(m_render, vec2(p[0],p[1]), vec2(p[2],p[3]), vec2(p[4],p[5]), vec2(p[6],p[7]), 1, Color(1.0, 0.0, 0.0));
-                }
-            }
-        }
+        Rectangle area = calculate_square_area(0, 0);
+        vec2 translate = vec2(area.x, area.y);
+        float scale = 0.1;
+        draw_svg_image(m_render, piece_set.pieces[i], scale, translate);
+        
     }
+}
+
+float Application::calculate_board_size() const
+{
+    float percent = 0.8;
+    float board_size = MIN(m_render.render_size.x, m_render.render_size.y) * percent;
+    return board_size;
+}
+
+Rectangle Application::calculate_square_area(int row, int column) const
+{
+    vec2 render_size = m_render.render_size;
+    float board_size = calculate_board_size();
+    float square_size = board_size / 8.0f;
+    vec2 margin = calculate_board_margin(render_size, board_size);
+    return Rectangle(margin.x + column * square_size, margin.y + (7 - row) * square_size, square_size, square_size);
+}
+
+vec2 Application::calculate_board_margin(vec2 render_size, float board_size)
+{
+    return vec2((render_size.x - board_size) / 2, (render_size.y - board_size) / 2);
+}
+
+bool Application::is_fullscreen() const
+{
+    SDL_WindowFlags flags = SDL_GetWindowFlags(m_window.window);
+    return flags & SDL_WINDOW_FULLSCREEN;
 }
 
 void Application::draw_ui()
