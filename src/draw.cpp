@@ -1,4 +1,6 @@
 #include "draw.hpp"
+#include "math_util.hpp"
+#include "common.hpp"
 
 void draw_segment(const RenderContext& context, vec2 start, vec2 end, float thick, ColorF color)
 {
@@ -224,7 +226,7 @@ void draw_cubic_bezier(const RenderContext& context, vec2 p0, vec2 p1, vec2 p2, 
     }
 }
 
-void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale, vec2 translate)
+void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale, vec2 translate, ColorF color)
 {
     for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next)
     {
@@ -237,7 +239,7 @@ void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale,
                 vec2 p1 = (vec2(p[2], p[3]) * scale) + translate;
                 vec2 p2 = (vec2(p[4], p[5]) * scale) + translate;
                 vec2 p3 = (vec2(p[6], p[7]) * scale) + translate;
-                draw_cubic_bezier(context, p0, p1, p2, p3, 1, Color(1.0, 0.0, 0.0));
+                draw_cubic_bezier(context, p0, p1, p2, p3, 1, color);
             }
         }
     }

@@ -36,6 +36,9 @@ struct BoardPosition {
     BoardPosition(uint8_t r, uint8_t c) : row(r), column(c) {}
 };
 
+bool operator==(BoardPosition pos0, BoardPosition pos1);
+bool operator!=(BoardPosition pos0, BoardPosition pos1);
+
 using SquareIndex = uint8_t;
 #define NullSquareIndex SquareIndex(0xff)
 
@@ -46,17 +49,18 @@ SquareIndex board_position_to_index(BoardPosition pos);
 struct ChessState {
     Bitboard white = {};
     Bitboard black = {};
-    BoardPosition white_king = {};
-    BoardPosition black_king = {};
+    SquareIndex white_king = NullSquareIndex;
+    SquareIndex black_king = NullSquareIndex;
     Bitboard queen = 0;
     Bitboard rook = 0;
     Bitboard bishop = 0;
+    Bitboard knight = 0;
     Bitboard pawn = 0;
 
-    bool wcl;
-    bool wcr;
-    bool bcl;
-    bool bcr;
+    bool wcl = false;
+    bool wcr = false;
+    bool bcl = false;
+    bool bcr = false;
 
     SquareIndex en_passant_square;
 
@@ -80,14 +84,14 @@ struct ChessMove {
 };
 
 struct ChessGame {
-    ChessState start;
+    ChessState state;
     DArray<ChessMove> moves;
 
     bool make_move(SquareIndex from, SquareIndex to);
     bool undo_move();
 };
 
-ChessState parse_fen_string(String fen);
+bool parse_fen_string(ChessState* state, String fen);
 ChessPosition calculate_position(ChessState state);
 
 Bitboard calculate_orthogonal_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);

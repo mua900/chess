@@ -74,6 +74,13 @@ bool Application::initialize()
         return false;
     }
 
+    ChessState state;
+    bool success = parse_fen_string(&state, String("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+    if (!success)
+    {
+        return false;
+    }
+
     quit = false;
 
     return true;
@@ -311,17 +318,78 @@ void Application::draw_board()
         for (int j = 0; j < 8; j++)
         {
             Color color = ((i + j) % 2 == 0) ? WhiteSquareColor : BlackSquareColor;
-            render_rectangle(Rectangle(margin.x + i * square_size, margin.y + j * square_size, square_size, square_size), color);
+            render_rectangle(Rectangle(margin.x + i * square_size, margin.y + j * square_size, square_size, square_size), color, false);
         }
     }
 
-    for (int i = 0; i < 1/*PIECE_TYPE_PER_SIDE * 2 */; i++)
+    Rectangle area = calculate_square_area(1, 0);
+    vec2 translate = vec2(area.x, area.y);
+    float scale = 0.1;
+
+    ChessState state = game.state;
+    while (state.white)
     {
-        Rectangle area = calculate_square_area(0, 0);
-        vec2 translate = vec2(area.x, area.y);
-        float scale = 0.1;
-        draw_svg_image(m_render, piece_set.pieces[i], scale, translate);
-        
+        int index = pop_lsb(&state.white);
+        BoardPosition position = index_to_board_position(index);
+        Bitboard square = BIT(index);
+        ColorF color = ColorF(0.8, 0.8, 0.8);
+        NSVGimage* image = nullptr;
+        if (index_to_board_position(state.white_king) == position) {
+            image = piece_set.pieces[PieceType::King];
+        }
+        else if (state.queen & square) {
+            image = piece_set.pieces[PieceType::Queen];
+        }
+        else if (state.rook & square) {
+            image = piece_set.pieces[PieceType::Rook];
+        }
+        else if (state.bishop & square) {
+            image = piece_set.pieces[PieceType::Bishop];
+        }
+        else if (state.knight & square) {
+            image = piece_set.pieces[PieceType::Knight];
+        }
+        else if (state.pawn & square) {
+            image = piece_set.pieces[PieceType::Pawn];
+        }
+        else {
+            log_error("Invalid chess board state");
+            continue;
+        }
+
+        draw_svg_image(m_render, image, scale, translate, color);
+    }
+    while (state.black)
+    {
+        int index = pop_lsb(&state.black);
+        BoardPosition position = index_to_board_position(index);
+        Bitboard square = BIT(index);
+        ColorF color = ColorF(0.4, 0.4, 0.4);
+        NSVGimage* image = nullptr;
+        if (index_to_board_position(state.black_king) == position) {
+            image = piece_set.pieces[PieceType::King];
+        }
+        else if (state.queen & square) {
+            image = piece_set.pieces[PieceType::Queen];
+        }
+        else if (state.rook & square) {
+            image = piece_set.pieces[PieceType::Rook];
+        }
+        else if (state.bishop & square) {
+            image = piece_set.pieces[PieceType::Bishop];
+        }
+        else if (state.knight & square) {
+            image = piece_set.pieces[PieceType::Knight];
+        }
+        else if (state.pawn & square) {
+            image = piece_set.pieces[PieceType::Pawn];
+        }
+        else {
+            log_error("Invalid chess board state");
+            continue;
+        }
+
+        draw_svg_image(m_render, image, scale, translate, color);
     }
 }
 

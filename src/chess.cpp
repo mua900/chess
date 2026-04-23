@@ -1,6 +1,7 @@
 #include "chess.hpp"
+#include "log.hpp"
 
-Bitboard to_bitboard(BoardPosition pos)
+Bitboard board_position_to_bitboard(BoardPosition pos)
 {
     return pos.column + pos.row * 8;
 }
@@ -105,17 +106,18 @@ bool parse_fen_string(ChessState* state, String fen)
             }
             else if (fen[cursor] == '/')
             {
-                if (column != 8)
+                if (column != 0 && row != 7)
                 {
                     return false;
                 }
-
-                column = 0;
-                row -= 1;
             }
 
             ADVANCE();
         }
+
+        if (column != 8)
+            return false;
+        row -= 1;
     }
 
     if (fen[cursor] != ' ')
@@ -188,6 +190,7 @@ bool parse_fen_string(ChessState* state, String fen)
     String half_move_string = string_slice_to_character(fen, cursor, ' ');
     bool half_move_success = false;
     int half_move_counter = string_to_integer(half_move_string, &half_move_success);
+    cursor += half_move_string.size;
     if (!half_move_success)
         return false;
 
@@ -198,6 +201,7 @@ bool parse_fen_string(ChessState* state, String fen)
     String full_move_string = string_slice(fen, cursor, fen.size);
     bool full_move_success = false;
     int full_move_clock = string_to_integer(full_move_string, &full_move_success);
+    cursor += full_move_string.size;
     if (!full_move_success)
         return false;
 
@@ -217,9 +221,72 @@ bool ChessGame::undo_move()
     return true;
 }
 
+void ChessState::put_piece(PieceType type, ChessColor color, SquareIndex index)
+{
+    Bitboard square = BIT(index);
+
+    if (color == ChessColor::White)
+    {
+        white |= square;
+    }
+    else if (color == ChessColor::Black)
+    {
+        black |= square;
+    }
+
+    switch (type)
+    {
+        case PieceType::King: {
+            BoardPosition position = index_to_board_position(index);
+            if ((color == ChessColor::White &&
+                 white_king != NullSquareIndex &&
+                 index_to_board_position(white_king) != position) ||
+                (color == ChessColor::Black &&
+                 black_king != NullSquareIndex &&
+                 index_to_board_position(black_king) != position)
+                 )
+            {
+                log_warning("Placing more than one king on the board");
+            }
+
+            if (color == ChessColor::White)
+                white_king = index;
+            else if (color == ChessColor::Black)
+                black_king = index;
+            break;
+        }
+        case PieceType::Queen: {
+            queen |= square;
+            break;
+        }
+        case PieceType::Rook: {
+            rook |= square;
+            break;
+        }
+        case PieceType::Bishop: {
+            bishop |= square;
+            break;
+        }
+        case PieceType::Knight: {
+            knight |= square;
+            break;
+        }
+        case PieceType::Pawn: {
+            pawn |= square;
+            break;
+        }
+    }
+}
+
+void ChessState::put_piece(PieceType type, ChessColor color, BoardPosition position)
+{
+    put_piece(type, color, board_position_to_bitboard(position));
+}
+
 ChessPosition calculate_position(ChessState state)
 {
     ChessPosition position;
+
     return position;
 }
 
@@ -286,4 +353,42 @@ Bitboard calculate_knight_moves(Bitboard pieces, Bitboard blockers, Bitboard cap
 {
     int offsets[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
     return calculate_direction_moves(pieces, blockers, captures, make_array(offsets), 1);
+}
+
+bool operator==(BoardPosition pos0, BoardPosition pos1) {
+    return pos0.row == pos1.row && pos1.column == pos1.column;
+}
+
+bool operator!=(BoardPosition pos0, BoardPosition pos1) {
+    return pos0.row != pos1.row || pos1.column != pos1.column;
+}
+
+SquareIndex parse_square(char rank, char file)
+{
+    int row = 0;
+    int column = 0;
+    switch (rank) {
+        case '1': row = 0; break;
+        case '2': row = 1; break;
+        case '3': row = 2; break;
+        case '4': row = 3; break;
+        case '5': row = 4; break;
+        case '6': row = 5; break;
+        case '7': row = 6; break;
+        case '8': row = 7; break;
+        default: return NullSquareIndex;
+    }
+    switch (to_lower_ascii(column)) {
+        case 'a': column = 0; break;
+        case 'b': column = 1; break;
+        case 'c': column = 2; break;
+        case 'd': column = 3; break;
+        case 'e': column = 4; break;
+        case 'f': column = 5; break;
+        case 'g': column = 6; break;
+        case 'h': column = 7; break;
+        default: return NullSquareIndex;
+    }
+
+    return row * 8 + column;
 }
