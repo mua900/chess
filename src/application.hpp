@@ -8,6 +8,7 @@
 #include "input.hpp"
 #include "draw.hpp"
 #include "chess.hpp"
+#include "piece_set.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -30,15 +31,11 @@ enum Events {
 
 #define NS_PER_SECONDS 1'000'000'000
 
-struct PieceSet {
-    MutableString name;
-    NSVGimage* pieces[PIECE_TYPE_PER_SIDE * 2];
-};
-
 class Application {
 public:
     ChessGame game = {};
     SquareIndex m_selected_square = NullSquareIndex;
+    SquareIndex m_target_square = NullSquareIndex;
 
     Window m_window = {};
     RenderContext m_render = {};
@@ -90,8 +87,6 @@ private:
 
     bool read_asset_catalog(String_Builder& path);
 
-    bool load_piece_set(String_Builder& path);
-
     bool set_eval_string(String s);
     bool set_eval_string_left(String s);
     bool set_eval_string_right(String s);
@@ -114,7 +109,6 @@ private:
 };
 
 void get_base_path(String_Builder& builder);
-void get_to_run_tree_path(String_Builder& builder, const char* path);
 
 Text create_text(SDL_Renderer* renderer, String text, Font font, Color color);
 

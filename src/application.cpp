@@ -15,6 +15,22 @@ bool Application::initialize()
         return false;
     }
 
+    String_Builder path(256);
+
+    get_base_path(path);
+    if (!read_asset_catalog(path)) {
+        log_error("Could not read asset catalog\n");
+        return false;
+    }
+
+    AssetId piece_set_id = get_asset("chessnut", m_catalog);
+    if (!piece_set_id.is_valid()) {
+        log_error("Could not load piece set");
+        return false;
+    }
+
+    piece_set = m_catalog.get_piece_set(piece_set_id);
+
     // window
     {
         float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
@@ -58,22 +74,6 @@ bool Application::initialize()
         }
     }
 
-    String_Builder path(256);
-
-    get_base_path(path);
-    if (!read_asset_catalog(path)) {
-        log_error("Could not read asset catalog\n");
-        // return false;
-    }
-
-    get_to_run_tree_path(path, "asset/piece_set/chessnut/");
-    if (!load_piece_set(path))
-    {
-        // @todo a fallback simple procedural piece set
-        log_error("Could not load default piece set");
-        return false;
-    }
-
     ChessState state;
     bool success = parse_fen_string(&state, String("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
     if (!success)
@@ -115,53 +115,6 @@ bool Application::read_asset_catalog(String_Builder& path)
     bool parse_description = parse_assets(path.c_string(), m_catalog);
 
     return parse_description;
-}
-
-void get_base_path(String_Builder& builder)
-{
-    const char* base_path = SDL_GetBasePath();
-    builder.clear_and_append(make_string(base_path));
-}
-
-void get_to_run_tree_path(String_Builder& builder, const char* path)
-{
-    get_base_path(builder);
-    builder.append(String(path));
-}
-
-bool Application::load_piece_set(String_Builder& path)
-{
-    const char* expected_names[PIECE_TYPE_PER_SIDE * 2] = {
-        "wK", "wQ", "wR", "wB", "wN", "wP",
-        "bK", "bQ", "bR", "bB", "bN", "bP",
-    };
-
-    for (int i = 0; i < ARRAY_SIZE(expected_names); i++)
-    {
-        int file = 0;
-        file += path.append(String(expected_names[i]));
-        file += path.append(String(".svg"));
-
-        NSVGimage* image = NULL;
-        // @todo think about dpi
-        image = nsvgParseFromFile(path.c_string(), "px", 96);
-
-        if (!image)
-        {
-            path.remove(file);
-            return false;
-        }
-        log_info("Piece: %s, Width: %.1f, Height: %.1f\n", path.c_string(), image->width, image->height);
-        path.remove(file);
-
-        if (piece_set.pieces[i])
-        {
-            nsvgDelete(piece_set.pieces[i]);
-        }
-        piece_set.pieces[i] = image;
-    }
-
-    return true;
 }
 
 void Application::handle_events()
@@ -345,7 +298,7 @@ void Application::draw_board()
             {
                 color = is_white ? ColorF(0.8, 0.5, 0.5) : ColorF(0.6, 0.3, 0.3);
             }
-            render_rectangle(Rectangle(margin.x + i * square_size, margin.y + j * square_size, square_size, square_size), color, false);
+            render_rectangle(Rectangle(margin.x + column * square_size, margin.y + row * square_size, square_size, square_size), color, false);
         }
     }
 
@@ -361,31 +314,31 @@ void Application::draw_board()
         float scale = 0.1;
 
         ColorF color = ColorF(0.8, 0.8, 0.8);
-        NSVGimage* image = nullptr;
+        PieceType piece_type = PieceType::King;
         if (index_to_board_position(state.white_king) == position) {
-            image = piece_set.pieces[PieceType::King];
+            piece_type = PieceType::King;
         }
         else if (state.queen & square) {
-            image = piece_set.pieces[PieceType::Queen];
+            piece_type = PieceType::Queen;
         }
         else if (state.rook & square) {
-            image = piece_set.pieces[PieceType::Rook];
+            piece_type = PieceType::Rook;
         }
         else if (state.bishop & square) {
-            image = piece_set.pieces[PieceType::Bishop];
+            piece_type = PieceType::Bishop;
         }
         else if (state.knight & square) {
-            image = piece_set.pieces[PieceType::Knight];
+            piece_type = PieceType::Knight;
         }
         else if (state.pawn & square) {
-            image = piece_set.pieces[PieceType::Pawn];
+            piece_type = PieceType::Pawn;
         }
         else {
             log_error("Invalid chess board state");
             continue;
         }
 
-        draw_svg_image(m_render, image, scale, translate, color);
+        draw_texture(m_render, area, piece_set.pieces[piece_type + 0]);
     }
     while (state.black)
     {
@@ -398,31 +351,31 @@ void Application::draw_board()
         float scale = 0.1;
 
         ColorF color = ColorF(0.4, 0.4, 0.4);
-        NSVGimage* image = nullptr;
+        PieceType piece_type = PieceType::King;
         if (index_to_board_position(state.black_king) == position) {
-            image = piece_set.pieces[PieceType::King];
+            piece_type = PieceType::King;
         }
         else if (state.queen & square) {
-            image = piece_set.pieces[PieceType::Queen];
+            piece_type = PieceType::Queen;
         }
         else if (state.rook & square) {
-            image = piece_set.pieces[PieceType::Rook];
+            piece_type = PieceType::Rook;
         }
         else if (state.bishop & square) {
-            image = piece_set.pieces[PieceType::Bishop];
+            piece_type = PieceType::Bishop;
         }
         else if (state.knight & square) {
-            image = piece_set.pieces[PieceType::Knight];
+            piece_type = PieceType::Knight;
         }
         else if (state.pawn & square) {
-            image = piece_set.pieces[PieceType::Pawn];
+            piece_type = PieceType::Pawn;
         }
         else {
             log_error("Invalid chess board state");
             continue;
         }
 
-        draw_svg_image(m_render, image, scale, translate, color);
+        draw_texture(m_render, area, piece_set.pieces[piece_type + PieceType::Count]);
     }
 }
 

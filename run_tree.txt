@@ -1,1 +1,2 @@
-piece_set piece_set/chessnut
+piece_set chessnut piece_set/chessnut
+shader piece_shader shader/piece.spv

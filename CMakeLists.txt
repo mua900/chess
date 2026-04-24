@@ -17,6 +17,8 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(application
 	src/application.hpp
 	src/application.cpp
+	src/piece_set.hpp
+	src/piece_set.cpp
 	src/audio.hpp
 	src/audio.cpp
 	src/input.hpp

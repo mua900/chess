@@ -13,6 +13,7 @@ enum PieceType {
     Bishop = 3,
     Knight = 4,
     Pawn   = 5,
+    Count,
 };
 
 enum class ChessColor {

@@ -5,6 +5,8 @@
 #include "template.hpp"
 #include "ui.hpp"
 #include "audio.hpp"
+#include "draw.hpp"
+#include "piece_set.hpp"
 
 enum AssetKind {
     ASSET_KIND_ZERO   = 0,
@@ -12,6 +14,7 @@ enum AssetKind {
     ASSET_KIND_AUDIO  = 2,
     ASSET_KIND_FONT   = 3,
     ASSET_KIND_SHADER = 4,
+    ASSET_KIND_PIECE_SET = 5,  // a set of svg images
     ASSET_KIND_COUNT,
 };
 
@@ -19,33 +22,17 @@ struct AssetId {
     int id;
     int generation;
 
-    bool valid() const { return id != -1 || generation != 0; }
+    bool is_valid() const { return id != -1 || generation != 0; }
 };
 
 static const AssetId NullAssetId = AssetId {-1, 0};
 
 struct AssetLoadContext {
-    SDL_Renderer* renderer;
+    const RenderContext* render;
 };
 
 // resource types
 // thin wrappers around more specific types
-
-struct AudioResource {
-    MIX_Audio* audio;
-};
-
-struct FontResource {
-    Font font;
-};
-
-struct ImageResource {
-    SDL_Texture* texture;
-};
-
-struct ShaderResource {
-    // @todo
-};
 
 struct Asset {
     AssetKind kind;
@@ -55,9 +42,11 @@ struct Asset {
 
     AssetId identifier = {};
     union {
-        FontResource font;
-        ImageResource image;
-        AudioResource audio;
+        Font font;
+        SDL_Texture* image;
+        MIX_Audio* audio;
+        SDL_GPUShader* shader;
+        PieceSet piece_set;
     } data = {};
 
     Asset() : kind(ASSET_KIND_ZERO), identifier(NullAssetId) {}
@@ -77,9 +66,9 @@ struct AssetCatalog {
         assets.get_ref(index).identifier.generation = 0;
     }
 
-    const ImageResource* get_image(AssetId id)
+    const SDL_Texture* get_image(AssetId id)
     {
-        if (!id.valid())
+        if (!id.is_valid())
         {
             return nullptr;
         }
@@ -90,28 +79,28 @@ struct AssetCatalog {
             return nullptr;
         }
 
-        return &asset.data.image;
+        return asset.data.image;
     }
 
-    const FontResource* get_font(AssetId id)
+    const Font get_font(AssetId id)
     {
-        if (!id.valid())
+        if (!id.is_valid())
         {
-            return nullptr;
+            return Font();
         }
 
         const Asset& asset = assets.get_ref(id.id);
         if (asset.kind != ASSET_KIND_FONT || asset.identifier.generation != id.generation)
         {
-            return nullptr;
+            return Font();
         }
 
-        return &asset.data.font;
+        return asset.data.font;
     }
 
-    const AudioResource* get_audio(AssetId id)
+    const MIX_Audio* get_audio(AssetId id)
     {
-        if (!id.valid())
+        if (!id.is_valid())
         {
             return nullptr;
         }
@@ -122,7 +111,39 @@ struct AssetCatalog {
             return nullptr;
         }
 
-        return &asset.data.audio;
+        return asset.data.audio;
+    }
+
+    const SDL_GPUShader* get_shader(AssetId id)
+    {
+        if (!id.is_valid())
+        {
+            return nullptr;
+        }
+
+        const Asset& asset = assets.get_ref(id.id);
+        if (asset.kind != ASSET_KIND_SHADER || asset.identifier.generation != id.generation)
+        {
+            return nullptr;
+        }
+
+        return asset.data.shader;
+    }
+
+    const PieceSet get_piece_set(AssetId id)
+    {
+        if (!id.is_valid())
+        {
+            return PieceSet();
+        }
+
+        const Asset& asset = assets.get_ref(id.id);
+        if (asset.kind != ASSET_KIND_SHADER || asset.identifier.generation != id.generation)
+        {
+            return PieceSet();
+        }
+
+        return asset.data.piece_set;
     }
 };
 
@@ -133,5 +154,8 @@ bool parse_assets(const char* path, AssetCatalog& catalog);
 // returns the existing handle if the asset is already loaded otherwise loads the asset on the fly and returns the handle
 // returns null id if no asset with the given name is found or the asset load fails
 AssetId get_asset(const char* name, AssetCatalog& catalog);
+
+void get_base_path(String_Builder& builder);
+void get_to_run_tree_path(String_Builder& builder, const char* path);
 
 #endif // _ASSET_H

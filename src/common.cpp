@@ -203,7 +203,7 @@ bool load_file(const char* filepath, BinaryData& data) {
 
 bool load_file_text(const char* filepath, String_Builder& builder)
 {
-	FILE* handle = fopen(filepath, "r");
+	FILE* handle = fopen(filepath, "rb");
     if (!handle)
     {
         return false;

@@ -1,5 +1,6 @@
 #include "asset.hpp"
 #include "log.hpp"
+#include "chess.hpp"
 
 #include <SDL3_image/SDL_image.h>
 
@@ -192,7 +193,7 @@ AssetId get_asset(const char* name_cstr, AssetCatalog& catalog)
     {
         if (string_compare(asset.name, name))
         {
-            if (asset.identifier.valid())
+            if (asset.identifier.is_valid())
             {
                 return asset.identifier;
             }
@@ -212,19 +213,20 @@ AssetId get_asset(const char* name_cstr, AssetCatalog& catalog)
 
 bool load_asset(Asset& asset, AssetLoadContext& load_context)
 {
-    SCOPE_STRING(asset.path, path);
+    String_Builder path = String_Builder();
+    path.append(asset.path);
 
     switch (asset.kind)
     {
         case ASSET_KIND_IMAGE: {
-            SDL_Texture* texture = IMG_LoadTexture(load_context.renderer, path);
+            SDL_Texture* texture = IMG_LoadTexture(load_context.render->renderer, path.c_string());
             if (!texture)
             {
                 asset.identifier.id = -1;
                 return false;
             }
 
-            asset.data.image.texture = texture;
+            asset.data.image = texture;
             asset.identifier.generation += 1;
 
             return true;
@@ -235,7 +237,7 @@ bool load_asset(Asset& asset, AssetLoadContext& load_context)
             return true;
         }
         case ASSET_KIND_FONT: {
-            bool success = load_font_file(&asset.data.font.font, path, asset.data.font.font.size);
+            bool success = load_font_file(&asset.data.font, path.c_string(), asset.data.font.size);
             if (!success)
             {
                 asset.identifier.id = -1;
@@ -246,12 +248,67 @@ bool load_asset(Asset& asset, AssetLoadContext& load_context)
             return true;
         }
         case ASSET_KIND_SHADER: {
-            log_warning("Shader loading or support for shaders not implemented but trying to load shader %s", path);
-            // fallthrough
+            // @todo
+            return false;
+        }
+        case ASSET_KIND_PIECE_SET: {
+            get_to_run_tree_path(path, "piece_set/chessnut");
+            NSVGimage* images[PIECE_TYPE_PER_SIDE * 2];
+            load_piece_set(images, path);
+            render_piece_set(*load_context.render, asset.data.piece_set.pieces, images);
+            for (int i = 0; i < PIECE_TYPE_PER_SIDE * 2; i++)
+            {
+                nsvgDelete(images[i]);
+            }
+
+            return true;
         }
         default: {
             asset.identifier.id = -1;
             return false;
         }
     }
+}
+
+void get_base_path(String_Builder& builder)
+{
+    const char* base_path = SDL_GetBasePath();
+    builder.clear_and_append(make_string(base_path));
+}
+
+void get_to_run_tree_path(String_Builder& builder, const char* path)
+{
+    get_base_path(builder);
+    builder.append(String(path));
+}
+
+bool load_piece_set(NSVGimage* images[], String_Builder& path)
+{
+    const char* expected_names[PIECE_TYPE_PER_SIDE * 2] = {
+        "wK", "wQ", "wR", "wB", "wN", "wP",
+        "bK", "bQ", "bR", "bB", "bN", "bP",
+    };
+
+    for (int i = 0; i < ARRAY_SIZE(expected_names); i++)
+    {
+        int file = 0;
+        file += path.append(String(expected_names[i]));
+        file += path.append(String(".svg"));
+
+        NSVGimage* image = NULL;
+        // @todo think about dpi
+        image = nsvgParseFromFile(path.c_string(), "px", 96);
+
+        if (!image)
+        {
+            path.remove(file);
+            return false;
+        }
+        log_info("Piece: %s, Width: %.1f, Height: %.1f\n", path.c_string(), image->width, image->height);
+        path.remove(file);
+
+        images[i] = image;
+    }
+
+    return true;
 }

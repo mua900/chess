@@ -226,7 +226,7 @@ void draw_cubic_bezier(const RenderContext& context, vec2 p0, vec2 p1, vec2 p2, 
     }
 }
 
-void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale, vec2 translate, ColorF color)
+void draw_svg_image_outline(const RenderContext& context, NSVGimage* image, float scale, vec2 translate, ColorF color)
 {
     for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next)
     {
@@ -243,4 +243,10 @@ void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale,
             }
         }
     }
+}
+
+void draw_texture(const RenderContext& context, Rectangle area, SDL_Texture* texture)
+{
+    SDL_FRect dst = { area.x, area.y, area.w, area.h };
+    SDL_RenderTexture(context.renderer, texture, NULL, &dst);
 }
