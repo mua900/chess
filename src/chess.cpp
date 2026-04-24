@@ -139,15 +139,15 @@ bool parse_fen_string(ChessState* state, String fen)
     ADVANCE();
 
     {
-        state->wcl = false;
-        state->wcr = false;
-        state->bcl = false;
-        state->bcr = false;
+        state->wck = false;
+        state->wcq = false;
+        state->bck = false;
+        state->bcq = false;
         int save = cursor;
-        if (fen[cursor] == 'K') { state->wcl = true; ADVANCE(); }
-        if (fen[cursor] == 'Q') { state->wcr = true; ADVANCE(); }
-        if (fen[cursor] == 'k') { state->bcl = true; ADVANCE(); }
-        if (fen[cursor] == 'q') { state->bcr = true; ADVANCE(); }
+        if (fen[cursor] == 'K') { state->wck = true; ADVANCE(); }
+        if (fen[cursor] == 'Q') { state->wcq = true; ADVANCE(); }
+        if (fen[cursor] == 'k') { state->bck = true; ADVANCE(); }
+        if (fen[cursor] == 'q') { state->bcq = true; ADVANCE(); }
 
         if (cursor == save)
         {
@@ -171,7 +171,10 @@ bool parse_fen_string(ChessState* state, String fen)
     else
     {
         // bounds check
-        SquareIndex square = parse_square(fen[cursor], fen[cursor + 1]);
+        if (cursor + 2 >= fen.size)
+            return false;
+
+        SquareIndex square = parse_square(fen[cursor + 1], fen[cursor]);
         if (square == NullSquareIndex)
         {
             return false;
@@ -179,8 +182,6 @@ bool parse_fen_string(ChessState* state, String fen)
 
         state->en_passant_square = square;
         cursor += 2;
-        if (cursor >= fen.size)
-            return false;
     }
 
     if (fen[cursor] != ' ')
@@ -363,6 +364,54 @@ bool operator!=(BoardPosition pos0, BoardPosition pos1) {
     return pos0.row != pos1.row || pos1.column != pos1.column;
 }
 
+void print_board_state(ChessState state)
+{
+    printf("     a  b  c  d  e  f  g  h \n");
+
+    for (int row = 7; row >= 0; row--)
+    {
+        printf("  %d ", row + 1);
+        for (int column = 0; column < 8; column++)
+        {
+            SquareIndex index = row * 8 + column;
+            Bitboard square = BIT(index);
+
+            char character = '!';
+            if (state.white_king == index || state.black_king == index) {
+                character = 'K';
+            }
+            else if (state.queen & square) {
+                character = 'Q';
+            }
+            else if (state.rook & square) {
+                character = 'R';
+            }
+            else if (state.bishop & square) {
+                character = 'B';
+            }
+            else if (state.knight & square) {
+                character = 'N';
+            }
+            else if (state.pawn & square) {
+                character = 'P';
+            }
+            else {
+                character = '#';
+            }
+
+            if (state.white & square) { character = to_upper_ascii(character); }
+            else if (state.black & square) { character = to_lower_ascii(character); }
+
+            printf(" %c ", character);
+        }
+        printf("\n");
+    }
+
+    printf("\n");
+    printf(" WKS: %d, WQS: %d, BKS: %d, BQS: %d \n", state.wck, state.wcq, state.bck, state.bcq);
+    printf(" En passant: %s\n", square_identifier_string(state.en_passant_square));
+}
+
 SquareIndex parse_square(char rank, char file)
 {
     int row = 0;
@@ -378,7 +427,7 @@ SquareIndex parse_square(char rank, char file)
         case '8': row = 7; break;
         default: return NullSquareIndex;
     }
-    switch (to_lower_ascii(column)) {
+    switch (to_lower_ascii(file)) {
         case 'a': column = 0; break;
         case 'b': column = 1; break;
         case 'c': column = 2; break;
@@ -391,4 +440,23 @@ SquareIndex parse_square(char rank, char file)
     }
 
     return row * 8 + column;
+}
+
+const char* square_identifier_string(SquareIndex index)
+{
+    if (index == NullSquareIndex) return "-";
+    if (index < 0 || index >= 64) return "!!";  // respect two characters
+
+    const char* square_names[] = {
+        "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8",
+        "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8",
+        "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8",
+        "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8",
+        "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8",
+        "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8",
+        "g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8",
+        "h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8",
+    };
+
+    return square_names[index];
 }

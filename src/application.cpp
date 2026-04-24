@@ -81,6 +81,9 @@ bool Application::initialize()
         return false;
     }
 
+    print_board_state(state);
+    game.state = state;
+
     quit = false;
 
     return true;
@@ -234,6 +237,22 @@ bool Application::keyboard_input(SDL_KeyboardEvent keyboard)
 
 bool Application::mouse_input()
 {
+    vec2 mouse_pos = m_input.mouse.pos;
+
+    vec2 render_size = m_render.render_size;
+    float board_size = calculate_board_size();
+    float square_size = board_size / 8.0f;
+    vec2 margin = calculate_board_margin(render_size, board_size);
+
+    if (Rectangle(margin.x, margin.y, board_size, board_size).contains_top_left(mouse_pos))
+    {
+        int row = 7 - int(floorf((mouse_pos.y - margin.y) / square_size));
+        int column = int(floorf((mouse_pos.x - margin.x) / square_size));
+
+        m_selected_square = row * 8 + column;
+        return true;
+    }
+
     return false;
 }
 
@@ -313,18 +332,22 @@ void Application::draw_board()
     const Color WhiteSquareColor = Color(0xAA, 0xAA, 0xAA);
     const Color BlackSquareColor = Color(0x22, 0x22, 0x22);
 
-    for (int i = 0; i < 8; i++)
+    for (int j = 0; j < 8; j++)
     {
-        for (int j = 0; j < 8; j++)
+        for (int i = 0; i < 8; i++)
         {
-            Color color = ((i + j) % 2 == 0) ? WhiteSquareColor : BlackSquareColor;
+            bool is_white = ((i + j) % 2 == 0);
+            Color color = is_white ? WhiteSquareColor : BlackSquareColor;
+            int row = 7 - j;
+            int column = i;
+            SquareIndex index = row * 8 + column;
+            if (index == m_selected_square)
+            {
+                color = is_white ? ColorF(0.8, 0.5, 0.5) : ColorF(0.6, 0.3, 0.3);
+            }
             render_rectangle(Rectangle(margin.x + i * square_size, margin.y + j * square_size, square_size, square_size), color, false);
         }
     }
-
-    Rectangle area = calculate_square_area(1, 0);
-    vec2 translate = vec2(area.x, area.y);
-    float scale = 0.1;
 
     ChessState state = game.state;
     while (state.white)
@@ -332,6 +355,11 @@ void Application::draw_board()
         int index = pop_lsb(&state.white);
         BoardPosition position = index_to_board_position(index);
         Bitboard square = BIT(index);
+
+        Rectangle area = calculate_square_area(position.row, position.column);
+        vec2 translate = vec2(area.x, area.y);
+        float scale = 0.1;
+
         ColorF color = ColorF(0.8, 0.8, 0.8);
         NSVGimage* image = nullptr;
         if (index_to_board_position(state.white_king) == position) {
@@ -364,6 +392,11 @@ void Application::draw_board()
         int index = pop_lsb(&state.black);
         BoardPosition position = index_to_board_position(index);
         Bitboard square = BIT(index);
+
+        Rectangle area = calculate_square_area(position.row, position.column);
+        vec2 translate = vec2(area.x, area.y);
+        float scale = 0.1;
+
         ColorF color = ColorF(0.4, 0.4, 0.4);
         NSVGimage* image = nullptr;
         if (index_to_board_position(state.black_king) == position) {

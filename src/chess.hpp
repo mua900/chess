@@ -41,6 +41,7 @@ bool operator!=(BoardPosition pos0, BoardPosition pos1);
 
 using SquareIndex = uint8_t;
 #define NullSquareIndex SquareIndex(0xff)
+const char* square_identifier_string(SquareIndex index);
 
 Bitboard board_position_to_bitboard(BoardPosition pos);
 BoardPosition index_to_board_position(SquareIndex index);
@@ -57,16 +58,18 @@ struct ChessState {
     Bitboard knight = 0;
     Bitboard pawn = 0;
 
-    bool wcl = false;
-    bool wcr = false;
-    bool bcl = false;
-    bool bcr = false;
+    bool wck = false;
+    bool wcq = false;
+    bool bck = false;
+    bool bcq = false;
 
-    SquareIndex en_passant_square;
+    SquareIndex en_passant_square = NullSquareIndex;
 
     void put_piece(PieceType type, ChessColor color, SquareIndex index);
     void put_piece(PieceType type, ChessColor color, BoardPosition position);
 };
+
+void print_board_state(ChessState state);
 
 struct ChessPosition {
     ChessState board = {};

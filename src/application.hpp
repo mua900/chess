@@ -37,7 +37,8 @@ struct PieceSet {
 
 class Application {
 public:
-    ChessGame game;
+    ChessGame game = {};
+    SquareIndex m_selected_square = NullSquareIndex;
 
     Window m_window = {};
     RenderContext m_render = {};
