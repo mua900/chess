@@ -10,7 +10,7 @@ private:
 	int m_cap = 0;
 
 public:
-	T* data() { return m_data; }
+	const T const * data() const { return m_data; }
 	int size() const { return m_size; }
 
 	DArray() {}
@@ -36,6 +36,10 @@ public:
 
 	bool in_bounds(int index) const {
 		return index < m_size && index >= 0;
+	}
+
+	T& operator[](int index) const {
+		return m_data[index];
 	}
 
 	T get(int index) const {

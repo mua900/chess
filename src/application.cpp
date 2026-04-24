@@ -338,7 +338,8 @@ void Application::draw_board()
             continue;
         }
 
-        draw_texture(m_render, area, piece_set.pieces[piece_type + 0]);
+        SDL_Texture* texture = piece_set.pieces[piece_type + 0];
+        draw_texture(m_render, area, texture);
     }
     while (state.black)
     {
@@ -375,7 +376,8 @@ void Application::draw_board()
             continue;
         }
 
-        draw_texture(m_render, area, piece_set.pieces[piece_type + PieceType::Count]);
+        SDL_Texture* texture = piece_set.pieces[piece_type + PieceType::Count];
+        draw_texture(m_render, area, texture);
     }
 }
 

@@ -40,6 +40,7 @@ AssetParseLineResult asset_parse_line(String line, Asset& pointer)
     String image = make_string("image");
     String audio = make_string("audio");
     String shader = make_string("shader");
+    String piece_set = make_string("piece_set");
 
     int cursor = 0;
     String kind = string_slice_to_character(line, 0, ' ');
@@ -60,6 +61,11 @@ AssetParseLineResult asset_parse_line(String line, Asset& pointer)
     {
         asset_kind = ASSET_KIND_SHADER;
         cursor += shader.size;
+    }
+    else if (string_starts_with(line, piece_set))
+    {
+        asset_kind = ASSET_KIND_PIECE_SET;
+        cursor += piece_set.size;
     }
     else {
         return 0;
@@ -126,14 +132,14 @@ AssetParseLineResult asset_parse_line(String line, Asset& pointer)
 
 bool parse_assets(const char* description, AssetCatalog& catalog)
 {
-    String_Builder file_contents;
-    bool success = load_file_text(description, file_contents);
+    catalog.builder.clear();
+    bool success = load_file_text(description, catalog.builder);
     if (!success)
     {
         return false;
     }
 
-    return parse_asset_description(file_contents.c_string(), catalog);
+    return parse_asset_description(catalog.builder.c_string(), catalog);
 }
 
 bool parse_asset_description(const char* description, AssetCatalog& catalog)
@@ -254,7 +260,8 @@ bool load_asset(Asset& asset, AssetLoadContext& load_context)
         case ASSET_KIND_PIECE_SET: {
             get_to_run_tree_path(path, "piece_set/chessnut");
             NSVGimage* images[PIECE_TYPE_PER_SIDE * 2];
-            load_piece_set(images, path);
+            if (!load_piece_set(images, path))
+                return false;
             render_piece_set(*load_context.render, asset.data.piece_set.pieces, images);
             for (int i = 0; i < PIECE_TYPE_PER_SIDE * 2; i++)
             {

@@ -4,6 +4,7 @@
 #include <SDL3/SDL.h>
 #include "common.hpp"
 #include "math_util.hpp"
+#include "template.hpp"
 
 #include <nanosvg.h>
 
@@ -11,6 +12,19 @@ struct RenderContext {
     vec2 render_size = {};
     SDL_Renderer* renderer = nullptr;
     SDL_Texture* render_target = nullptr;
+
+    DArray<SDL_Vertex> vertex_scratch;
+    DArray<int> index_scratch;
+};
+
+struct Mesh {
+    DArray<vec2> points;
+    DArray<int> indices;
+
+    ~Mesh() {
+        points.reset();
+        indices.reset();
+    }
 };
 
 bool loadShader(RenderContext& context, const char* path);
@@ -23,5 +37,7 @@ void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale,
 void draw_svg_image_outline(const RenderContext& context, NSVGimage * image, float scale, vec2 translate, ColorF color);
 
 void draw_texture(const RenderContext& context, Rectangle area, SDL_Texture* texture);
+
+Mesh triangulate_vector_image(NSVGimage* image);
 
 #endif // _DRAW_H

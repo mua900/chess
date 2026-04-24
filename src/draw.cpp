@@ -226,6 +226,30 @@ void draw_cubic_bezier(const RenderContext& context, vec2 p0, vec2 p1, vec2 p2, 
     }
 }
 
+void draw_mesh(const RenderContext& context, Mesh mesh, float scale, vec2 translate, ColorF color)
+{
+    for (int i = 0; i < mesh.points.size(); i++)
+    {
+        mesh.points[i] *= scale;
+        mesh.points[i] += translate;
+
+        context.vertex_scratch[i].position.x = mesh.points[i].x;
+        context.vertex_scratch[i].position.y = mesh.points[i].y;
+        context.vertex_scratch[i].color = SDL_FColor {color.r, color.g, color.b, color.a};
+    }
+    for (int i = 0; i < mesh.indices.size(); i ++)
+    {
+        context.index_scratch[i] = mesh.indices[i];
+    }
+    SDL_RenderGeometry(context.renderer, nullptr, context.vertex_scratch.data(), context.vertex_scratch.size(), context.index_scratch.data(), context.index_scratch.size());
+}
+
+void draw_svg_image(const RenderContext& context, NSVGimage* image, float scale, vec2 translate, ColorF color)
+{
+    Mesh mesh = triangulate_vector_image(image);
+    draw_mesh(context, mesh, scale, translate, color);
+}
+
 void draw_svg_image_outline(const RenderContext& context, NSVGimage* image, float scale, vec2 translate, ColorF color)
 {
     for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next)
@@ -249,4 +273,22 @@ void draw_texture(const RenderContext& context, Rectangle area, SDL_Texture* tex
 {
     SDL_FRect dst = { area.x, area.y, area.w, area.h };
     SDL_RenderTexture(context.renderer, texture, NULL, &dst);
+}
+
+Mesh triangulate_vector_image(NSVGimage* image)
+{
+    Mesh mesh;
+
+    for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next)
+    {
+        for (NSVGpath* path = shape->paths; path != NULL; path = path->next)
+        {
+            for (int i = 0; i < path->npts - 1; i += 3)
+            {
+
+            }
+        }
+    }
+
+    return mesh;
 }
