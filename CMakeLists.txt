@@ -18,7 +18,6 @@ add_executable(application
 	src/application.hpp
 	src/application.cpp
 	src/piece_set.hpp
-	src/piece_set.cpp
 	src/audio.hpp
 	src/audio.cpp
 	src/input.hpp
@@ -30,11 +29,6 @@ add_executable(application
 	src/draw.hpp
 	src/draw.cpp
 	src/main.cpp
-
-	src/vendor.cpp
-
-	# sources from vendor libraries
-	vendor/nanosvg/nanosvg.h
 )
 
 add_library(chess STATIC
@@ -64,7 +58,6 @@ set(SDLIMAGE_LBM  OFF)
 set(SDLIMAGE_PCX  OFF)
 set(SDLIMAGE_PNM  OFF)
 set(SDLIMAGE_QOI  OFF)
-set(SDLIMAGE_SVG  OFF)
 set(SDLIMAGE_TGA  OFF)
 set(SDLIMAGE_TIF  OFF)
 set(SDLIMAGE_WEBP OFF)
@@ -73,6 +66,7 @@ set(SDLIMAGE_XPM  OFF)
 set(SDLIMAGE_XV   OFF)
 # png
 set(SDLIMAGE_PNG ON)
+set(SDLIMAGE_SVG  ON)
 add_subdirectory(vendor/SDL_image-3.4.2 EXCLUDE_FROM_ALL)
 
 add_subdirectory(vendor/SDL_mixer-3.2.0 EXCLUDE_FROM_ALL)
@@ -82,8 +76,6 @@ target_include_directories(application PRIVATE vendor/SDL-3.4.4/include/)
 target_include_directories(application PRIVATE vendor/SDL_image-3.4.2/include/)
 target_include_directories(application PRIVATE vendor/SDL_mixer-3.2.0/include)
 target_include_directories(application PRIVATE vendor/SDL_ttf-3.2.2/include/)
-
-target_include_directories(application PRIVATE vendor/nanosvg)
 
 target_link_libraries(
 	application

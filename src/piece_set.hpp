@@ -4,7 +4,6 @@
 #include "common.hpp"
 #include "chess.hpp"
 #include "draw.hpp"
-#include <nanosvg.h>
 
 struct PieceSet {
 	String name = {};
@@ -12,7 +11,6 @@ struct PieceSet {
 	SDL_Texture* pieces[PIECE_TYPE_PER_SIDE * 2] = {};
 };
 
-bool load_piece_set(NSVGimage* image[], String_Builder& path);
-void render_piece_set(const RenderContext& context, SDL_Texture* targets[], NSVGimage* images[]);
+bool load_piece_set(const RenderContext& context, SDL_Texture* pieces[], String_Builder& path);
 
 #endif // _PIECE_SET_H

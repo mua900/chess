@@ -6,8 +6,6 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_mixer/SDL_mixer.h>
 
-#include <nanosvg.h>
-
 bool Application::initialize()
 {
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -298,7 +296,7 @@ void Application::draw_board()
             {
                 color = is_white ? ColorF(0.8, 0.5, 0.5) : ColorF(0.6, 0.3, 0.3);
             }
-            render_rectangle(Rectangle(margin.x + column * square_size, margin.y + row * square_size, square_size, square_size), color, false);
+            render_rectangle(Rectangle(margin.x + i * square_size, margin.y + j * square_size, square_size, square_size), color, false);
         }
     }
 

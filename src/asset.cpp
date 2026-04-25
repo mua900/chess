@@ -16,6 +16,7 @@ String next_word(String source, int& offset)
 #define ASSET_LINE_IS_COMMENT            BIT(1)
 #define ASSET_LINE_IS_OPTIONAL           BIT(2)
 #define ASSET_LINE_HAS_TRAILING_TOKENS   BIT(3)
+#define ASSET_LINE_HAS_TRAILING_TOKENS   BIT(3)
 
 using AssetParseLineResult = u32;
 
@@ -259,13 +260,9 @@ bool load_asset(Asset& asset, AssetLoadContext& load_context)
         }
         case ASSET_KIND_PIECE_SET: {
             get_to_run_tree_path(path, "piece_set/chessnut");
-            NSVGimage* images[PIECE_TYPE_PER_SIDE * 2];
-            if (!load_piece_set(images, path))
-                return false;
-            render_piece_set(*load_context.render, asset.data.piece_set.pieces, images);
-            for (int i = 0; i < PIECE_TYPE_PER_SIDE * 2; i++)
+            if (!load_piece_set(*load_context.render, asset.data.piece_set.pieces, path))
             {
-                nsvgDelete(images[i]);
+                return false;
             }
 
             return true;
@@ -289,7 +286,7 @@ void get_to_run_tree_path(String_Builder& builder, const char* path)
     builder.append(String(path));
 }
 
-bool load_piece_set(NSVGimage* images[], String_Builder& path)
+bool load_piece_set(const RenderContext& context, SDL_Texture* pieces[], String_Builder& path)
 {
     const char* expected_names[PIECE_TYPE_PER_SIDE * 2] = {
         "wK", "wQ", "wR", "wB", "wN", "wP",
@@ -302,19 +299,18 @@ bool load_piece_set(NSVGimage* images[], String_Builder& path)
         file += path.append(String(expected_names[i]));
         file += path.append(String(".svg"));
 
-        NSVGimage* image = NULL;
-        // @todo think about dpi
-        image = nsvgParseFromFile(path.c_string(), "px", 96);
-
-        if (!image)
+        SDL_Texture* texture = IMG_LoadTexture(context.renderer, path.c_string());
+        if (!texture)
         {
-            path.remove(file);
+            for (int j = 0; j < i; j++)
+            {
+                SDL_DestroyTexture(pieces[j]);
+                pieces[j] = nullptr;
+            }
             return false;
         }
-        log_info("Piece: %s, Width: %.1f, Height: %.1f\n", path.c_string(), image->width, image->height);
-        path.remove(file);
 
-        images[i] = image;
+        pieces[i] = texture;
     }
 
     return true;
