@@ -337,6 +337,25 @@ int String_Builder::append(String string) {
     return string.size;
 }
 
+int String_Builder::append_path(String string)
+{
+    int total = 0;
+
+    ensure_size(cursor + string.size);
+    for (int i = 0; i < string.size; i++) {
+        if (string.data[i] == '/')
+        {
+            total += append(PathSeparator);
+        }
+        else
+        {
+            total += append_char(string.data[i]);
+        }
+    }
+
+    return total;
+}
+
 int String_Builder::append_char(char ch) {
     ensure_size(cursor + 1);
 

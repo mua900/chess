@@ -21,14 +21,6 @@ bool Application::initialize()
         return false;
     }
 
-    AssetId piece_set_id = get_asset("chessnut", m_catalog);
-    if (!piece_set_id.is_valid()) {
-        log_error("Could not load piece set");
-        return false;
-    }
-
-    piece_set = m_catalog.get_piece_set(piece_set_id);
-
     // window
     {
         float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
@@ -82,6 +74,14 @@ bool Application::initialize()
     print_board_state(state);
     game.state = state;
 
+    AssetId piece_set_id = get_asset("chessnut", m_catalog);
+    if (!piece_set_id.is_valid()) {
+        log_error("Could not load piece set");
+        return false;
+    }
+
+    piece_set = m_catalog.get_piece_set(piece_set_id);
+
     quit = false;
 
     return true;
@@ -111,6 +111,8 @@ bool Application::read_asset_catalog(String_Builder& path)
     const char* desc_name = "run_tree.txt";
     path.append(make_string(desc_name));
     bool parse_description = parse_assets(path.c_string(), m_catalog);
+
+    m_catalog.load_context.render = &m_render;
 
     return parse_description;
 }

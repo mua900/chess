@@ -208,8 +208,11 @@ AssetId get_asset(const char* name_cstr, AssetCatalog& catalog)
             {
                 bool load = load_asset(asset, catalog.load_context);
                 if (!load)
+                {
                     return NullAssetId;
+                }
 
+                asset.identifier.generation += 1;
                 return asset.identifier;
             }
         }
@@ -259,7 +262,7 @@ bool load_asset(Asset& asset, AssetLoadContext& load_context)
             return false;
         }
         case ASSET_KIND_PIECE_SET: {
-            get_to_run_tree_path(path, "piece_set/chessnut");
+            get_to_run_tree_path(path, "piece_set/chessnut/");
             if (!load_piece_set(*load_context.render, asset.data.piece_set.pieces, path))
             {
                 return false;
@@ -283,7 +286,8 @@ void get_base_path(String_Builder& builder)
 void get_to_run_tree_path(String_Builder& builder, const char* path)
 {
     get_base_path(builder);
-    builder.append(String(path));
+    builder.append_path(String("asset/"));
+    builder.append_path(String(path));
 }
 
 bool load_piece_set(const RenderContext& context, SDL_Texture* pieces[], String_Builder& path)
@@ -302,6 +306,7 @@ bool load_piece_set(const RenderContext& context, SDL_Texture* pieces[], String_
         SDL_Texture* texture = IMG_LoadTexture(context.renderer, path.c_string());
         if (!texture)
         {
+            log_error("Couldn't load %s. Because: %s\n", path.c_string(), SDL_GetError());
             for (int j = 0; j < i; j++)
             {
                 SDL_DestroyTexture(pieces[j]);
@@ -310,6 +315,7 @@ bool load_piece_set(const RenderContext& context, SDL_Texture* pieces[], String_
             return false;
         }
 
+        path.remove(file);
         pieces[i] = texture;
     }
 

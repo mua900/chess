@@ -231,6 +231,7 @@ struct String_Builder {
 
     void create(int initial_capacity);
     int append(String string);
+    int append_path(String string);  // expect / as the separator and replace it with \\ on windows
     int append_char(char ch);
     int append_integer(int n);
     int append_hex(int n);

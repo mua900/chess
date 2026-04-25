@@ -22,7 +22,7 @@ struct AssetId {
     int id;
     int generation;
 
-    bool is_valid() const { return id != -1 || generation != 0; }
+    bool is_valid() const { return id != -1 && generation != 0; }
 };
 
 static const AssetId NullAssetId = AssetId {-1, 0};
@@ -138,7 +138,7 @@ struct AssetCatalog {
         }
 
         const Asset& asset = assets.get_ref(id.id);
-        if (asset.kind != ASSET_KIND_SHADER || asset.identifier.generation != id.generation)
+        if (asset.kind != ASSET_KIND_PIECE_SET || asset.identifier.generation != id.generation)
         {
             return PieceSet();
         }
