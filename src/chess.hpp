@@ -6,14 +6,15 @@
 
 #define PIECE_TYPE_PER_SIDE 6
 
-enum PieceType {
+enum PieceType : u8 {
     King   = 0,
     Queen  = 1,
     Rook   = 2,
     Bishop = 3,
     Knight = 4,
     Pawn   = 5,
-    Count,
+    Count  = 6,
+    Sentinel = 7,
 };
 
 enum class ChessColor {
@@ -24,6 +25,7 @@ enum class ChessColor {
 #define PIECE_COLOR_BIT BIT(3)
 #define PIECE_TYPE_MASK 0b111
 
+// @todo maybe use this
 // 0 0 0 0 c p p p -> lowest three bits are the piece type as a number and the 3rd bit is the color
 using Piece = uint8_t;
 
@@ -51,15 +53,11 @@ BoardPosition index_to_board_position(SquareIndex index);
 SquareIndex board_position_to_index(BoardPosition pos);
 
 struct ChessState {
+    PieceType squares[64] = {};
+
     Bitboard white = {};
     Bitboard black = {};
-    SquareIndex white_king = NullSquareIndex;
-    SquareIndex black_king = NullSquareIndex;
-    Bitboard queen = 0;
-    Bitboard rook = 0;
-    Bitboard bishop = 0;
-    Bitboard knight = 0;
-    Bitboard pawn = 0;
+    Bitboard pieces[PieceType::Count] = {};
 
     bool wck = false;
     bool wcq = false;
@@ -81,10 +79,10 @@ void print_board_state(ChessState state);
 
 struct ChessPosition {
     ChessState board = {};
-    Bitboard white_moves = {};
-    Bitboard black_moves = {};
-    Bitboard attack_squares_white = {};
-    Bitboard attack_squares_black = {};
+    Bitboard white_moves = 0;
+    Bitboard black_moves = 0;
+    Bitboard moves[64];
+    Bitboard attacks[64];
 };
 
 struct ChessMove {
@@ -95,11 +93,15 @@ struct ChessMove {
 };
 
 struct ChessGame {
-    ChessState state = {};
+    ChessPosition position = {};
     DArray<ChessMove> moves = {};
 
     bool make_move(SquareIndex from, SquareIndex to);
     bool undo_move();
+
+    bool set_position(ChessState state);
+    void calculate_moves();
+    void calculate_king_moves();
 };
 
 bool parse_fen_string(ChessState* state, String fen);
@@ -108,6 +110,7 @@ ChessPosition calculate_position(ChessState state);
 Bitboard calculate_orthogonal_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
 Bitboard calculate_diagonal_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
 Bitboard calculate_knight_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
+Bitboard calculate_pawn_moves(Bitboard pieces, Bitboard blockers, Bitboard captures);
 
 SquareIndex parse_square(char rank, char file);
 

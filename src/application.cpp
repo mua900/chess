@@ -74,7 +74,7 @@ bool Application::initialize()
     }
 
     print_board_state(state);
-    game.state = state;
+    game.set_position(state);
 
     AssetId piece_set_id = get_asset("chessnut", m_catalog);
     if (!piece_set_id.is_valid()) {
@@ -317,7 +317,7 @@ void Application::draw_board()
         }
     }
 
-    ChessState state = game.state;
+    ChessState state = game.position.board;
     while (state.white)
     {
         int index = pop_lsb(&state.white);
@@ -336,26 +336,19 @@ void Application::draw_piece(ChessState& state, SquareIndex index, bool is_white
     Bitboard square = BIT(index);
     PieceType piece_type = PieceType::King;
 
-    if (state.white_king == index || state.black_king == index) {
-        piece_type = PieceType::King;
+    bool found = false;
+    for (int i = 0; i < PieceType::Count; i++)
+    {
+        if (state.pieces[i] & square)
+        {
+            piece_type = PieceType(i);
+            found = true;
+            break;
+        }
     }
-    else if (state.queen & square) {
-        piece_type = PieceType::Queen;
-    }
-    else if (state.rook & square) {
-        piece_type = PieceType::Rook;
-    }
-    else if (state.bishop & square) {
-        piece_type = PieceType::Bishop;
-    }
-    else if (state.knight & square) {
-        piece_type = PieceType::Knight;
-    }
-    else if (state.pawn & square) {
-        piece_type = PieceType::Pawn;
-    }
-    else {
-        log_error("Invalid chess board state");
+
+    if (!found) {
+        log_error("Invalid call to draw_piece");
     }
 
     Rectangle area = calculate_square_area(position.row, position.column);

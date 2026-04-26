@@ -235,80 +235,78 @@ bool ChessGame::make_move(SquareIndex from, SquareIndex to)
     Bitboard friendly = 0;
     Bitboard opponent = 0;
 
-    ASSERT(!(state.white & state.black));
+    ASSERT(!(position.board.white & position.board.black));
 
-    bool is_white_move = state.white & source;
+    bool is_white_move = position.board.white & source;
 
-    friendly = is_white_move ? state.white : state.black;
-    opponent = is_white_move ? state.black : state.white;
+    friendly = is_white_move ? position.board.white : position.board.black;
+    opponent = is_white_move ? position.board.black : position.board.white;
 
     if (friendly & destination)
     {
         return false;
     }
 
+    bool is_capture = opponent & destination;
+
     if (is_white_move)
     {
-        if (state.side_to_move != ChessColor::White)
+        if (position.board.side_to_move != ChessColor::White)
         {
             return false;
         }
-        state.white &= ~source;
-        state.white |= destination;
 
-        if (from == state.white_king)
+        if (!(position.white_moves & destination))
         {
-            state.white_king = to;
+            return false;
+        }
+
+        position.board.white &= ~source;
+        position.board.white |= destination;
+
+        if (is_capture)
+        {
+            position.board.black &= ~destination;
         }
     }
     else
     {
-        if (state.side_to_move != ChessColor::Black)
+        if (position.board.side_to_move != ChessColor::Black)
         {
             return false;
         }
-        state.black &= ~source;
-        state.black |= destination;
 
-        if (from == state.black_king)
+        if (!(position.black_moves & destination))
         {
-            state.black_king = to;
+            return false;
+        }
+
+        position.board.black &= ~source;
+        position.board.black |= destination;
+
+        if (is_capture)
+        {
+            position.board.white &= ~destination;
         }
     }
 
-    if (state.queen & source)
-    {
-        state.queen = bitboard_move(state.queen, source, destination);
-    }
-    else if (state.rook & source)
-    {
-        state.rook = bitboard_move(state.rook, source, destination);
-    }
-    else if (state.bishop & source)
-    {
-        state.bishop = bitboard_move(state.bishop, source, destination);
-    }
-    else if (state.knight & source)
-    {
-        state.knight = bitboard_move(state.knight, source, destination);
-    }
-    else if (state.pawn & source)
-    {
-        state.pawn = bitboard_move(state.pawn, source, destination);
-    }
-    else  // empty square
-    {
-        panic("Invalid board state");
-    }
+    PieceType source_piece = position.board.squares[from];
+    PieceType destination_piece = position.board.squares[to];
+    position.board.pieces[source_piece] &= ~source;
+    position.board.pieces[destination_piece] &= ~destination;
+    position.board.pieces[source_piece] |= destination;
+
+    position.board.squares[from] = PieceType::Sentinel;
+    position.board.squares[to] = source_piece;
 
     ChessMove move = {};
     move.from = from;
     move.to = to;
-    move.capture = opponent & destination;
+    move.capture = is_capture;
 
     moves.add(move);
 
-    state.side_to_move = is_white_move ? ChessColor::Black : ChessColor::White;
+    position.board.side_to_move = is_white_move ? ChessColor::Black : ChessColor::White;
 
     return true;
 }
@@ -319,6 +317,31 @@ bool ChessGame::undo_move()
 
     moves.pop();
     return true;
+}
+
+bool ChessGame::set_position(ChessState state)
+{
+    position = {};
+    position.board = state;
+
+    calculate_moves();
+
+    return true;
+}
+
+void ChessGame::calculate_moves()
+{
+    Bitboard white_moves = 0;
+    Bitboard black_moves = 0;
+
+    position.white_moves = white_moves;
+    position.black_moves = black_moves;
+    calculate_king_moves();
+}
+
+void ChessGame::calculate_king_moves()
+{
+    // @todo
 }
 
 void ChessState::put_piece(PieceType type, ChessColor color, SquareIndex index)
@@ -334,48 +357,24 @@ void ChessState::put_piece(PieceType type, ChessColor color, SquareIndex index)
         black |= square;
     }
 
-    switch (type)
-    {
-        case PieceType::King: {
-            BoardPosition position = index_to_board_position(index);
-            if ((color == ChessColor::White &&
-                 white_king != NullSquareIndex &&
-                 index_to_board_position(white_king) != position) ||
-                (color == ChessColor::Black &&
-                 black_king != NullSquareIndex &&
-                 index_to_board_position(black_king) != position)
-                 )
-            {
-                log_warning("Placing more than one king on the board");
-            }
 
-            if (color == ChessColor::White)
-                white_king = index;
-            else if (color == ChessColor::Black)
-                black_king = index;
-            break;
-        }
-        case PieceType::Queen: {
-            queen |= square;
-            break;
-        }
-        case PieceType::Rook: {
-            rook |= square;
-            break;
-        }
-        case PieceType::Bishop: {
-            bishop |= square;
-            break;
-        }
-        case PieceType::Knight: {
-            knight |= square;
-            break;
-        }
-        case PieceType::Pawn: {
-            pawn |= square;
-            break;
+    if (type == PieceType::King) {
+        Bitboard white_king = white & pieces[PieceType::King];
+        Bitboard black_king = black & pieces[PieceType::King];
+        if ((color == ChessColor::White &&
+             white_king != 0 &&
+             white_king != square) ||
+            (color == ChessColor::Black &&
+             black_king != 0 &&
+             black_king != square)
+            )
+        {
+            log_warning("Trying to place more than one king on the board");
+            return;
         }
     }
+
+    pieces[type] |= square;
 }
 
 void ChessState::put_piece(PieceType type, ChessColor color, BoardPosition position)
@@ -385,18 +384,13 @@ void ChessState::put_piece(PieceType type, ChessColor color, BoardPosition posit
 
 void ChessState::clear_square(SquareIndex index)
 {
-    if (white_king == index)
-        white_king = NullSquareIndex;
-    if (black_king == index)
-        black_king = NullSquareIndex;
     Bitboard c = ~BIT(index);
     white &= c;
     black &= c;
-    queen &= c;
-    rook &= c;
-    bishop &= c;
-    knight &= c;
-    pawn &= c;
+    for (int i = 0; i < PieceType::Count; i++)
+    {
+        pieces[i] &= c;
+    }
 }
 
 ChessPosition calculate_position(ChessState state)
@@ -471,6 +465,43 @@ Bitboard calculate_knight_moves(Bitboard pieces, Bitboard blockers, Bitboard cap
     return calculate_direction_moves(pieces, blockers, captures, make_array(offsets), 1);
 }
 
+Bitboard calculate_pawn_moves(SquareIndex index, Bitboard blockers, Bitboard captures, bool is_white)
+{
+    Bitboard moves = 0;
+
+    Bitboard square = BIT(index);
+    BoardPosition position = index_to_board_position(index);
+
+    if (is_white && position.row == 7)
+    {
+        return 0;
+    }
+    if (!(is_white) && position.row == 0)
+    {
+        return 0;
+    }
+
+    int dir = is_white ? 1 : -1;
+    Bitboard forward = BIT(index + 8 * dir);
+    Bitboard left = BIT(index + 7 * dir);
+    Bitboard right = BIT(index + 9 * dir);
+
+    if (!(blockers & forward))
+    {
+        moves |= forward;
+    }
+    if (left & blockers)
+    {
+        moves |= left;
+    }
+    if (right & blockers)
+    {
+        moves |= right;
+    }
+
+    return moves;
+}
+
 Bitboard bitboard_move(Bitboard b, Bitboard source, Bitboard destination)
 {
     b &= ~source;
@@ -499,22 +530,22 @@ void print_board_state(ChessState state)
             Bitboard square = BIT(index);
 
             char character = '!';
-            if (state.white_king == index || state.black_king == index) {
+            if (state.pieces[PieceType::King] & square) {
                 character = 'K';
             }
-            else if (state.queen & square) {
+            else if (state.pieces[PieceType::Queen] & square) {
                 character = 'Q';
             }
-            else if (state.rook & square) {
+            else if (state.pieces[PieceType::Rook] & square) {
                 character = 'R';
             }
-            else if (state.bishop & square) {
+            else if (state.pieces[PieceType::Bishop] & square) {
                 character = 'B';
             }
-            else if (state.knight & square) {
+            else if (state.pieces[PieceType::Knight] & square) {
                 character = 'N';
             }
-            else if (state.pawn & square) {
+            else if (state.pieces[PieceType::Pawn] & square) {
                 character = 'P';
             }
             else {
