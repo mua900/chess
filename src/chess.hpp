@@ -29,6 +29,8 @@ using Piece = uint8_t;
 
 using Bitboard = uint64_t;
 
+Bitboard bitboard_move(Bitboard b, Bitboard source, Bitboard destination);
+
 struct BoardPosition {
     uint8_t row = 0;
     uint8_t column = 0;
@@ -65,9 +67,14 @@ struct ChessState {
     bool bcq = false;
 
     SquareIndex en_passant_square = NullSquareIndex;
+    u32 half_move = 0;
+    u32 move_clock = 0;
+    ChessColor side_to_move = ChessColor::White;
 
     void put_piece(PieceType type, ChessColor color, SquareIndex index);
     void put_piece(PieceType type, ChessColor color, BoardPosition position);
+
+    void clear_square(SquareIndex index);
 };
 
 void print_board_state(ChessState state);
@@ -88,8 +95,8 @@ struct ChessMove {
 };
 
 struct ChessGame {
-    ChessState state;
-    DArray<ChessMove> moves;
+    ChessState state = {};
+    DArray<ChessMove> moves = {};
 
     bool make_move(SquareIndex from, SquareIndex to);
     bool undo_move();

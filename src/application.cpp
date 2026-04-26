@@ -65,7 +65,9 @@ bool Application::initialize()
     }
 
     ChessState state;
-    bool success = parse_fen_string(&state, String("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+    String start = String("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    String random = String("RRRRRRRR/PPPPPPPP/8/8/8/8/PPPPPPPP/BBBBBBBB w KQkq - 0 1");
+    bool success = parse_fen_string(&state, start);
     if (!success)
     {
         return false;
@@ -202,8 +204,21 @@ bool Application::mouse_input()
         int row = 7 - int(floorf((mouse_pos.y - margin.y) / square_size));
         int column = int(floorf((mouse_pos.x - margin.x) / square_size));
 
-        m_selected_square = row * 8 + column;
+        SquareIndex square = row * 8 + column;
+        if (m_selected_square != NullSquareIndex)
+        {
+            game.make_move(m_selected_square, square);
+            m_selected_square = NullSquareIndex;
+        }
+        else
+        {
+            m_selected_square = square;
+        }
         return true;
+    }
+    else
+    {
+        m_selected_square = NullSquareIndex;
     }
 
     return false;
@@ -306,79 +321,50 @@ void Application::draw_board()
     while (state.white)
     {
         int index = pop_lsb(&state.white);
-        BoardPosition position = index_to_board_position(index);
-        Bitboard square = BIT(index);
-
-        Rectangle area = calculate_square_area(position.row, position.column);
-        vec2 translate = vec2(area.x, area.y);
-        float scale = 0.1;
-
-        ColorF color = ColorF(0.8, 0.8, 0.8);
-        PieceType piece_type = PieceType::King;
-        if (index_to_board_position(state.white_king) == position) {
-            piece_type = PieceType::King;
-        }
-        else if (state.queen & square) {
-            piece_type = PieceType::Queen;
-        }
-        else if (state.rook & square) {
-            piece_type = PieceType::Rook;
-        }
-        else if (state.bishop & square) {
-            piece_type = PieceType::Bishop;
-        }
-        else if (state.knight & square) {
-            piece_type = PieceType::Knight;
-        }
-        else if (state.pawn & square) {
-            piece_type = PieceType::Pawn;
-        }
-        else {
-            log_error("Invalid chess board state");
-            continue;
-        }
-
-        SDL_Texture* texture = piece_set.pieces[piece_type + 0];
-        draw_texture(m_render, area, texture);
+        draw_piece(state, index, true);
     }
     while (state.black)
     {
         int index = pop_lsb(&state.black);
-        BoardPosition position = index_to_board_position(index);
-        Bitboard square = BIT(index);
-
-        Rectangle area = calculate_square_area(position.row, position.column);
-        vec2 translate = vec2(area.x, area.y);
-        float scale = 0.1;
-
-        ColorF color = ColorF(0.4, 0.4, 0.4);
-        PieceType piece_type = PieceType::King;
-        if (index_to_board_position(state.black_king) == position) {
-            piece_type = PieceType::King;
-        }
-        else if (state.queen & square) {
-            piece_type = PieceType::Queen;
-        }
-        else if (state.rook & square) {
-            piece_type = PieceType::Rook;
-        }
-        else if (state.bishop & square) {
-            piece_type = PieceType::Bishop;
-        }
-        else if (state.knight & square) {
-            piece_type = PieceType::Knight;
-        }
-        else if (state.pawn & square) {
-            piece_type = PieceType::Pawn;
-        }
-        else {
-            log_error("Invalid chess board state");
-            continue;
-        }
-
-        SDL_Texture* texture = piece_set.pieces[piece_type + PieceType::Count];
-        draw_texture(m_render, area, texture);
+        draw_piece(state, index, false);
     }
+}
+
+void Application::draw_piece(ChessState& state, SquareIndex index, bool is_white)
+{
+    BoardPosition position = index_to_board_position(index);
+    Bitboard square = BIT(index);
+    PieceType piece_type = PieceType::King;
+
+    if (state.white_king == index || state.black_king == index) {
+        piece_type = PieceType::King;
+    }
+    else if (state.queen & square) {
+        piece_type = PieceType::Queen;
+    }
+    else if (state.rook & square) {
+        piece_type = PieceType::Rook;
+    }
+    else if (state.bishop & square) {
+        piece_type = PieceType::Bishop;
+    }
+    else if (state.knight & square) {
+        piece_type = PieceType::Knight;
+    }
+    else if (state.pawn & square) {
+        piece_type = PieceType::Pawn;
+    }
+    else {
+        log_error("Invalid chess board state");
+    }
+
+    Rectangle area = calculate_square_area(position.row, position.column);
+    vec2 translate = vec2(area.x, area.y);
+
+    int offset = is_white ? 0 : PieceType::Count;
+
+    SDL_Texture* texture = piece_set.pieces[piece_type + offset];
+    draw_texture(m_render, area, texture);
 }
 
 float Application::calculate_board_size() const

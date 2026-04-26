@@ -132,22 +132,24 @@ bool parse_fen_string(ChessState* state, String fen)
     else
         return false;
 
+    state->side_to_move = side_to_move;
+
     ADVANCE();
 
     if (fen[cursor] != ' ')
         return false;
     ADVANCE();
 
+    bool wck = false;
+    bool wcq = false;
+    bool bck = false;
+    bool bcq = false;
     {
-        state->wck = false;
-        state->wcq = false;
-        state->bck = false;
-        state->bcq = false;
         int save = cursor;
-        if (fen[cursor] == 'K') { state->wck = true; ADVANCE(); }
-        if (fen[cursor] == 'Q') { state->wcq = true; ADVANCE(); }
-        if (fen[cursor] == 'k') { state->bck = true; ADVANCE(); }
-        if (fen[cursor] == 'q') { state->bcq = true; ADVANCE(); }
+        if (fen[cursor] == 'K') { wck = true; ADVANCE(); }
+        if (fen[cursor] == 'Q') { wcq = true; ADVANCE(); }
+        if (fen[cursor] == 'k') { bck = true; ADVANCE(); }
+        if (fen[cursor] == 'q') { bcq = true; ADVANCE(); }
 
         if (cursor == save)
         {
@@ -159,6 +161,10 @@ bool parse_fen_string(ChessState* state, String fen)
                 return false;
         }
     }
+    state->wck = wck;
+    state->wcq = wcq;
+    state->bck = bck;
+    state->bcq = bcq;
 
     if (fen[cursor] != ' ')
         return false;
@@ -185,7 +191,9 @@ bool parse_fen_string(ChessState* state, String fen)
     }
 
     if (fen[cursor] != ' ')
+    {
         return false;
+    }
     cursor += 1;
 
     String half_move_string = string_slice_to_character(fen, cursor, ' ');
@@ -193,10 +201,16 @@ bool parse_fen_string(ChessState* state, String fen)
     int half_move_counter = string_to_integer(half_move_string, &half_move_success);
     cursor += half_move_string.size;
     if (!half_move_success)
+    {
         return false;
+    }
+
+    state->half_move = half_move_counter;
 
     if (fen[cursor] != ' ')
+    {
         return false;
+    }
     ADVANCE();
 
     String full_move_string = string_slice(fen, cursor, fen.size);
@@ -204,14 +218,99 @@ bool parse_fen_string(ChessState* state, String fen)
     int full_move_clock = string_to_integer(full_move_string, &full_move_success);
     cursor += full_move_string.size;
     if (!full_move_success)
+    {
         return false;
+    }
+
+    state->move_clock = full_move_clock;
 
     return true;
 }
 
 bool ChessGame::make_move(SquareIndex from, SquareIndex to)
 {
-    return false;
+    Bitboard source = BIT(from);
+    Bitboard destination = BIT(to);
+
+    Bitboard friendly = 0;
+    Bitboard opponent = 0;
+
+    ASSERT(!(state.white & state.black));
+
+    bool is_white_move = state.white & source;
+
+    friendly = is_white_move ? state.white : state.black;
+    opponent = is_white_move ? state.black : state.white;
+
+    if (friendly & destination)
+    {
+        return false;
+    }
+
+    if (is_white_move)
+    {
+        if (state.side_to_move != ChessColor::White)
+        {
+            return false;
+        }
+        state.white &= ~source;
+        state.white |= destination;
+
+        if (from == state.white_king)
+        {
+            state.white_king = to;
+        }
+    }
+    else
+    {
+        if (state.side_to_move != ChessColor::Black)
+        {
+            return false;
+        }
+        state.black &= ~source;
+        state.black |= destination;
+
+        if (from == state.black_king)
+        {
+            state.black_king = to;
+        }
+    }
+
+    if (state.queen & source)
+    {
+        state.queen = bitboard_move(state.queen, source, destination);
+    }
+    else if (state.rook & source)
+    {
+        state.rook = bitboard_move(state.rook, source, destination);
+    }
+    else if (state.bishop & source)
+    {
+        state.bishop = bitboard_move(state.bishop, source, destination);
+    }
+    else if (state.knight & source)
+    {
+        state.knight = bitboard_move(state.knight, source, destination);
+    }
+    else if (state.pawn & source)
+    {
+        state.pawn = bitboard_move(state.pawn, source, destination);
+    }
+    else  // empty square
+    {
+        panic("Invalid board state");
+    }
+
+    ChessMove move = {};
+    move.from = from;
+    move.to = to;
+    move.capture = opponent & destination;
+
+    moves.add(move);
+
+    state.side_to_move = is_white_move ? ChessColor::Black : ChessColor::White;
+
+    return true;
 }
 
 bool ChessGame::undo_move()
@@ -284,6 +383,22 @@ void ChessState::put_piece(PieceType type, ChessColor color, BoardPosition posit
     put_piece(type, color, board_position_to_bitboard(position));
 }
 
+void ChessState::clear_square(SquareIndex index)
+{
+    if (white_king == index)
+        white_king = NullSquareIndex;
+    if (black_king == index)
+        black_king = NullSquareIndex;
+    Bitboard c = ~BIT(index);
+    white &= c;
+    black &= c;
+    queen &= c;
+    rook &= c;
+    bishop &= c;
+    knight &= c;
+    pawn &= c;
+}
+
 ChessPosition calculate_position(ChessState state)
 {
     ChessPosition position;
@@ -354,6 +469,13 @@ Bitboard calculate_knight_moves(Bitboard pieces, Bitboard blockers, Bitboard cap
 {
     int offsets[8] = { -17, -15, -10, -6, 6, 10, 15, 17 };
     return calculate_direction_moves(pieces, blockers, captures, make_array(offsets), 1);
+}
+
+Bitboard bitboard_move(Bitboard b, Bitboard source, Bitboard destination)
+{
+    b &= ~source;
+    b |= destination;
+    return b;
 }
 
 bool operator==(BoardPosition pos0, BoardPosition pos1) {

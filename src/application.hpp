@@ -33,7 +33,6 @@ class Application {
 public:
     ChessGame game = {};
     SquareIndex m_selected_square = NullSquareIndex;
-    SquareIndex m_target_square = NullSquareIndex;
 
     Window m_window = {};
     RenderContext m_render = {};
@@ -102,6 +101,8 @@ private:
     Rectangle calculate_square_area(int row, int column) const;
 
     bool is_fullscreen() const;
+
+    void draw_piece(ChessState& state, SquareIndex index, bool is_white);
 
     static vec2 calculate_board_margin(vec2 render_size, float board_size);
 };
